@@ -84,7 +84,7 @@ fi
 
 make defconfig
 
-for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager; do
+for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager openbox-installer; do
 	if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
 		echo "ERROR: package ${pkg} was dropped by make defconfig"
 		exit 1

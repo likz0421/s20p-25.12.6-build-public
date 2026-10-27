@@ -120,7 +120,7 @@ jobs:
 
         make defconfig
 
-        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager; do
+        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager openbox-installer; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1
@@ -175,5 +175,6 @@ jobs:
           - WiFi: ${{ env.WIFI_COMBO }}
           - Default WiFi: SSID `hanzi`, WPA2-PSK password `hanziwawa`
           - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
-          - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV, Argon 3.1.0, Fluent 1.0.9, USB printer, mtwifi-cfg
+          - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
+          - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, USB printer, mtwifi-cfg
           - Upgrade: sysupgrade only; do not keep the 24.10 config.

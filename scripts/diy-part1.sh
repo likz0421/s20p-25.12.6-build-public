@@ -26,6 +26,10 @@ rm -rf /tmp/luci-theme-fluent
 git clone --depth 1 --branch v1.0.9 https://github.com/LazuliKao/luci-theme-fluent.git /tmp/luci-theme-fluent
 cp -a /tmp/luci-theme-fluent/package/* package/
 
+echo "==> Open-Box official installer"
+rm -rf package/openbox-installer
+cp -a "$ROOT/packages/openbox-installer" package/
+
 echo "==> package versions"
 git -C package/OpenAppFilter describe --tags --always
 git -C package/lucky rev-parse --short HEAD
