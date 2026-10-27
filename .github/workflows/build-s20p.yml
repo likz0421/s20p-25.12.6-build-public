@@ -65,7 +65,7 @@ jobs:
       run: |
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -yqq update
-        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev zip
+        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev zip dwarves clang llvm libelf-dev
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
         sudo -E apt-get -yqq autoremove --purge
         sudo -E apt-get -yqq clean
@@ -135,7 +135,14 @@ jobs:
           exit 1
         }
 
-        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4; do
+        for sym in CONFIG_KERNEL_DEBUG_INFO_BTF CONFIG_KERNEL_BPF_EVENTS CONFIG_KERNEL_BPF_SYSCALL; do
+          if ! grep -q "^${sym}=y$" .config; then
+            echo "ERROR: ${sym} is not enabled"
+            exit 1
+          fi
+        done
+
+        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4 luci-app-dae dae kmod-sched-bpf kmod-xdp-sockets-diag; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1
@@ -213,6 +220,8 @@ jobs:
           - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
           - UPnP/file apps: luci-app-upnp + miniupnpd-nftables, luci-app-filemanager, luci-app-filebrowser, luci-app-diskman, luci-app-samba4
+          - eBPF: BTF/BPF_EVENTS/KPROBE_EVENTS enabled; dae + luci-app-dae + geo included (大鹅插件). Run dae, Open-Box and OAF one at a time.
+          - Kernel: 6.12.112 (mac80211/backports 6.18.55)
           - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)
           - USB printer: not included
           - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, mtwifi-cfg
