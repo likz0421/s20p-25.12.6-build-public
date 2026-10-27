@@ -84,9 +84,13 @@ fi
 
 make defconfig
 
-grep -q '^CONFIG_TARGET_PROFILE="DEVICE_clx_s20p"$' .config || {
-	echo "ERROR: target profile is not clx_s20p"
-	grep '^CONFIG_TARGET_PROFILE' .config || true
+grep -q '^CONFIG_TARGET_MULTI_PROFILE=y$' .config || {
+	echo "ERROR: multi-profile is not enabled"
+	exit 1
+}
+
+grep -q '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_clx_s20p=y$' .config || {
+	echo "ERROR: clx_s20p device is not selected"
 	exit 1
 }
 
