@@ -21,7 +21,7 @@ if [ ! -d "$ROOT/scripts" ] || [ ! -f "$ROOT/configs/s20p.config" ]; then
 	exit 1
 fi
 
-for cmd in git make gcc python3 rsync unzip zip; do
+for cmd in git make gcc python3 rsync unzip zip clang llvm pahole; do
 	if ! command -v "$cmd" >/dev/null 2>&1; then
 		echo "Missing build dependency: $cmd"
 		echo "Install the OpenWrt build environment first:"
@@ -99,7 +99,14 @@ grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
 	exit 1
 }
 
-for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4; do
+for sym in CONFIG_KERNEL_DEBUG_INFO_BTF CONFIG_KERNEL_BPF_EVENTS CONFIG_KERNEL_BPF_SYSCALL; do
+	if ! grep -q "^${sym}=y$" .config; then
+		echo "ERROR: ${sym} is not enabled"
+		exit 1
+	fi
+done
+
+for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4 luci-app-dae dae kmod-sched-bpf kmod-xdp-sockets-diag; do
 	if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
 		echo "ERROR: package ${pkg} was dropped by make defconfig"
 		exit 1
