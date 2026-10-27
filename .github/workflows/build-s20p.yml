@@ -53,10 +53,10 @@ jobs:
       uses: jlumbroso/free-disk-space@main
       with:
         tool-cache: true
-        android: false
-        dotnet: false
-        haskell: false
-        large-packages: false
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
         swap-storage: false
 
     - name: Install build dependencies
@@ -74,7 +74,20 @@ jobs:
 
     - name: Clone source
       run: |
-        git clone --depth 1 -b "$REPO_BRANCH" "$REPO_URL" openwrt
+        # The root filesystem is ~14 GB free after cleanup; a full OpenWrt build
+        # with BTF needs more. Use the 70+ GB /mnt scratch disk when present.
+        FREE_KB=$(df -Pk /mnt 2>/dev/null | awk 'NR==2 {print $4}')
+        if [ -n "${FREE_KB:-}" ] && [ "$FREE_KB" -gt 41943040 ]; then
+          BUILD_ROOT=/mnt/openwrt-build
+          sudo mkdir -p "$BUILD_ROOT"
+          sudo chown "$(id -u):$(id -g)" "$BUILD_ROOT"
+        else
+          BUILD_ROOT="$GITHUB_WORKSPACE/openwrt"
+        fi
+        echo "BUILD_ROOT=$BUILD_ROOT"
+        df -hT "$(dirname "$BUILD_ROOT")"
+        git clone --depth 1 -b "$REPO_BRANCH" "$REPO_URL" "$BUILD_ROOT"
+        ln -sfn "$BUILD_ROOT" "$GITHUB_WORKSPACE/openwrt"
         if git -C openwrt fetch --depth 1 origin "$REPO_COMMIT"; then
           git -C openwrt checkout --detach "$REPO_COMMIT"
         else
@@ -176,6 +189,10 @@ jobs:
     - name: Download sources
       run: |
         cd openwrt
+        if [ -d /mnt/openwrt-build ]; then
+          sudo mkdir -p /mnt/tmp && sudo chown "$(id -u):$(id -g)" /mnt/tmp
+          export TMPDIR=/mnt/tmp
+        fi
         make download -j"$(nproc)"
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
@@ -183,8 +200,14 @@ jobs:
     - name: Build firmware
       run: |
         cd openwrt
+        if [ -d /mnt/openwrt-build ]; then
+          sudo mkdir -p /mnt/tmp && sudo chown "$(id -u):$(id -g)" /mnt/tmp
+          export TMPDIR=/mnt/tmp
+        fi
         echo "$(nproc) threads"
+        df -hT .
         make -j"$(nproc)" || make -j1 || make -j1 V=s
+        df -hT .
 
     - name: Collect output
       run: |
