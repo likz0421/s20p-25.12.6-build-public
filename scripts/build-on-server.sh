@@ -84,6 +84,12 @@ fi
 
 make defconfig
 
+grep -q '^CONFIG_TARGET_PROFILE="DEVICE_clx_s20p"$' .config || {
+	echo "ERROR: target profile is not clx_s20p"
+	grep '^CONFIG_TARGET_PROFILE' .config || true
+	exit 1
+}
+
 grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
 	echo "ERROR: initramfs is not enabled"
 	exit 1
