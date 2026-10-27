@@ -1,0 +1,31 @@
+--- a/package/mtk/applications/mtwifi-cfg/files/mtwifi.sh
++++ b/package/mtk/applications/mtwifi-cfg/files/mtwifi.sh
+@@ -29,15 +29,15 @@
+ 				if [ "$band" = "2g" ]; then
+ 					htmode="HE40"
+ 					htbsscoex="1"
+-					ssid="ImmortalWrt-2.4G"
++					ssid="hanzi"
+ 				elif [ "$band" = "5g" ]; then
+ 					htmode="HE160"
+ 					htbsscoex="0"
+-					ssid="ImmortalWrt-5G"
++					ssid="hanzi"
+ 				elif [ "$band" = "6g" ]; then
+ 					htmode="HE160"
+ 					htbsscoex="0"
+-					ssid="ImmortalWrt-6G"
++					ssid="hanzi"
+ 				fi
+ 
+ 				uci -q batch <<-EOF
+@@ -59,7 +59,8 @@
+ 					set wireless.default_${dev}.network=lan
+ 					set wireless.default_${dev}.mode=ap
+ 					set wireless.default_${dev}.ssid=${ssid}
+-					set wireless.default_${dev}.encryption=none
++					set wireless.default_${dev}.encryption=psk2
++					set wireless.default_${dev}.key=hanziwawa
+ EOF
+ 				uci -q commit wireless
+ 			}

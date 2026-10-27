@@ -1,0 +1,179 @@
+name: build-s20p-25.12.6
+
+on:
+  workflow_dispatch:
+    inputs:
+      LAN_IP:
+        description: 'LAN IP address'
+        required: true
+        default: '10.1.1.1'
+      DEFAULT_THEME:
+        description: 'Default LuCI theme'
+        required: true
+        type: choice
+        default: 'argon'
+        options:
+          - argon
+          - fluent
+      WIFI_COMBO:
+        description: 'WiFi driver + firmware'
+        required: true
+        type: choice
+        default: '7673-20260601'
+        options:
+          - '7673-20260601'
+          - '7672-20240823'
+      UPLOAD_RELEASE:
+        description: 'Create GitHub Release'
+        required: true
+        type: boolean
+        default: true
+
+env:
+  REPO_URL: https://github.com/chasey-dev/immortalwrt-mt798x-rebase
+  REPO_BRANCH: 25.12
+  REPO_COMMIT: 9f397975c7b47ce6986a6e39529d2f72fd5c729d
+  CONFIG_FILE: configs/s20p.config
+  TZ: Asia/Shanghai
+  LAN_IP: ${{ github.event.inputs.LAN_IP }}
+  DEFAULT_THEME: ${{ github.event.inputs.DEFAULT_THEME }}
+  WIFI_COMBO: ${{ github.event.inputs.WIFI_COMBO }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout build repo
+      uses: actions/checkout@v4
+
+    - name: Free disk space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+        android: false
+        dotnet: false
+        haskell: false
+        large-packages: false
+        swap-storage: false
+
+    - name: Install build dependencies
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -yqq update
+        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev
+        sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
+        sudo -E apt-get -yqq autoremove --purge
+        sudo -E apt-get -yqq clean
+        sudo timedatectl set-timezone "$TZ"
+        df -hT
+
+    - name: Clone source
+      run: |
+        git clone --depth 1 -b "$REPO_BRANCH" "$REPO_URL" openwrt
+        if git -C openwrt fetch --depth 1 origin "$REPO_COMMIT"; then
+          git -C openwrt checkout --detach "$REPO_COMMIT"
+        else
+          echo "WARNING: pinned source commit is not fetchable; using branch HEAD"
+        fi
+        git -C openwrt log -1 --oneline
+        grep -E 'LINUX_VERSION-6.12' openwrt/target/linux/generic/kernel-6.12
+
+    - name: DIY part 1 (third-party packages)
+      run: |
+        chmod +x "$GITHUB_WORKSPACE/scripts/diy-part1.sh"
+        "$GITHUB_WORKSPACE/scripts/diy-part1.sh"
+
+    - name: Update feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds update -a
+
+    - name: DIY part 2 (S20P fixes and defaults)
+      run: |
+        chmod +x "$GITHUB_WORKSPACE/scripts/diy-part2.sh"
+        "$GITHUB_WORKSPACE/scripts/diy-part2.sh"
+
+    - name: Install feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds install -a
+
+    - name: Load and verify config
+      run: |
+        cd openwrt
+        cp "$GITHUB_WORKSPACE/$CONFIG_FILE" .config
+
+        if [ "$WIFI_COMBO" = "7672-20240823" ]; then
+          sed -i 's/^CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7673=y/# CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7673 is not set/' .config
+          sed -i 's/^CONFIG_MTK_MT_WIFI_MT7986_20260601=y/# CONFIG_MTK_MT_WIFI_MT7986_20260601 is not set/' .config
+          sed -i 's|^CONFIG_MTK_MT_WIFI_FIRMWARE_PATH_MT7986=.*|CONFIG_MTK_MT_WIFI_FIRMWARE_PATH_MT7986="mt7986-fw-20240823"|' .config
+          {
+            echo 'CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7672=y'
+            echo 'CONFIG_MTK_MT_WIFI_MT7986_20240823=y'
+          } >> .config
+        fi
+
+        make defconfig
+
+        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager; do
+          if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
+            echo "ERROR: package ${pkg} was dropped by make defconfig"
+            exit 1
+          fi
+        done
+
+        grep -E 'CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_clx_s20p|CONFIG_VERSION_NUMBER|CONFIG_MTK_MT_WIFI_(DRIVER_VERSION|MT7986_202|FIRMWARE_PATH)' .config
+
+    - name: Download sources
+      run: |
+        cd openwrt
+        make download -j"$(nproc)"
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
+    - name: Build firmware
+      run: |
+        cd openwrt
+        echo "$(nproc) threads"
+        make -j"$(nproc)" || make -j1 || make -j1 V=s
+
+    - name: Collect output
+      run: |
+        cd openwrt/bin/targets/mediatek/filogic
+        ls -lh
+        echo "DATE=$(date +%Y.%m.%d-%H%M)" >> "$GITHUB_ENV"
+        mkdir -p "$GITHUB_WORKSPACE/out"
+        cp -v *clx_s20p* "$GITHUB_WORKSPACE/out/"
+        cp -v config.buildinfo feeds.buildinfo profiles.json sha256sums "$GITHUB_WORKSPACE/out/" 2>/dev/null || true
+        cd "$GITHUB_WORKSPACE/out"
+        sha256sum * > sha256sums-s20p.txt
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: s20p-25.12.6-${{ github.run_number }}-${{ env.WIFI_COMBO }}
+        path: out
+
+    - name: Create release
+      if: github.event.inputs.UPLOAD_RELEASE == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: s20p-25.12.6-${{ env.DATE }}-${{ env.WIFI_COMBO }}
+        name: S20P 25.12.6 ${{ env.WIFI_COMBO }}
+        files: out/*
+        body: |
+          - Source: ${{ env.REPO_URL }} (branch ${{ env.REPO_BRANCH }}, commit ${{ env.REPO_COMMIT }})
+          - Version: 25.12.6 (kernel 6.12.112)
+          - Device: CLX/Super Gateway S20P (`clx_s20p`)
+          - LAN: ${{ env.LAN_IP }}
+          - Default theme: ${{ env.DEFAULT_THEME }}
+          - WiFi: ${{ env.WIFI_COMBO }}
+          - Default WiFi: SSID `hanzi`, WPA2-PSK password `hanziwawa`
+          - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
+          - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV, Argon 3.1.0, Fluent 1.0.9, USB printer, mtwifi-cfg
+          - Upgrade: sysupgrade only; do not keep the 24.10 config.

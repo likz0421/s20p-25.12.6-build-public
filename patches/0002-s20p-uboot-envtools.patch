@@ -1,0 +1,14 @@
+--- a/package/boot/uboot-tools/uboot-envtools/files/mediatek_filogic
++++ b/package/boot/uboot-tools/uboot-envtools/files/mediatek_filogic
+@@ -78,4 +78,5 @@
+ acer,predator-w6|\
+ acer,predator-w6d|\
+ acer,vero-w6m|\
++clx,s20p|\
+ glinet,gl-mt2500|\
+@@ -88,3 +89,4 @@
+ nradio,c8-668gl|\
+-sl,3000-emmc)
++sl,3000-emmc|\
++supergateway,s20p)
+ 	ubootenv_add_mmc "u-boot-env" "" "0x0" "0x80000"

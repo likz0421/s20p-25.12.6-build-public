@@ -1,0 +1,10 @@
+--- a/target/linux/mediatek/image/filogic-ext.mk
++++ b/target/linux/mediatek/image/filogic-ext.mk
+@@ -30,6 +30,7 @@
+ define Device/clx_s20p
+   $(call Device/clx_s20-common)
+   DEVICE_MODEL := S20P
+   DEVICE_DTS := mt7986a-clx-s20p
++  SUPPORTED_DEVICES := clx,s20p supergateway,s20p
+ endef
+ TARGET_DEVICES += clx_s20p
