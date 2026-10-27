@@ -1,0 +1,28 @@
+name: cleanup-bad-runs
+
+on:
+  schedule:
+    - cron: '30 4 * * 0'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete cancelled/failed build runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run list --repo "${{ github.repository }}" \
+            --workflow build-s20p.yml --limit 100 \
+            --json databaseId,status,conclusion \
+            --jq '.[] | select(.status=="completed" and (.conclusion=="cancelled" or .conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="startup_failure")) | "\(.databaseId)"' |
+          while read -r id; do
+            [ -n "$id" ] || continue
+            echo "Deleting run $id"
+            gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$id"
+          done
