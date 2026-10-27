@@ -8,7 +8,6 @@ echo "==> apply S20P fixes"
 git apply "$ROOT/patches/0001-s20p-supported-devices.patch"
 git apply "$ROOT/patches/0002-s20p-uboot-envtools.patch"
 git apply "$ROOT/patches/0003-s20p-default-wifi.patch"
-git apply "$ROOT/patches/0004-s20p-initramfs.patch"
 
 echo "==> remove duplicate feed packages"
 rm -rf feeds/luci/themes/luci-theme-argon
