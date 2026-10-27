@@ -15,44 +15,95 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install squashfs-tools
+      - name: Install tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq squashfs-tools
+          sudo apt-get install -y -qq squashfs-tools tar gzip
 
       - name: Download and inspect image
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -uo pipefail
           TAG="${{ github.event.inputs.TAG }}"
           if [ -z "$TAG" ]; then
             TAG=$(gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName')
           fi
           echo "TAG=$TAG"
-          mkdir -p img
-          gh release download "$TAG" --repo "${{ github.repository }}" --pattern '*squashfs-sysupgrade.bin' --dir img
-          cd img
+          mkdir -p img && cd img
+          gh release download "$TAG" --repo "${{ github.repository }}" --pattern '*squashfs-sysupgrade.bin' --dir .
           tar xf *squashfs-sysupgrade.bin
           unsquashfs -d rootfs sysupgrade-*/root >/dev/null
+          R=rootfs
+          PK="$R/lib/apk/db/installed"
 
-          echo '=== /etc/openwrt_release ==='
-          cat rootfs/etc/openwrt_release
+          FAIL=0
+          ok()   { echo "PASS  $*"; }
+          bad()  { echo "FAIL  $*"; FAIL=$((FAIL+1)); }
+          have() { grep -qx "P:$1" "$PK" 2>/dev/null; }
+          want_pkg()  { if have "$1"; then ok "package present: $1"; else bad "package missing: $1"; fi; }
+          deny_pkg()  { if have "$1"; then bad "package must be absent: $1"; else ok "package absent: $1"; fi; }
 
-          echo '=== WiFi defaults in mtwifi.sh ==='
-          grep -n 'hanzi\|hanziwawa' rootfs/lib/wifi/mtwifi.sh || true
+          echo '=== identity ==='
+          cat $R/etc/openwrt_release 2>/dev/null || bad "missing /etc/openwrt_release"
+          REL=$(sed -n "s/^DISTRIB_RELEASE='\(.*\)'/\1/p" $R/etc/openwrt_release 2>/dev/null)
+          VER=$(cat $R/etc/openwrt_version 2>/dev/null)
+          [ "$REL" = "25.12.6" ] && ok "release is 25.12.6" || bad "release is '$REL', expected 25.12.6"
+          [ "$VER" = "25.12.6" ] && ok "version is 25.12.6" || bad "version is '$VER', expected 25.12.6"
 
-          echo '=== WiFi uci-defaults ==='
-          ls -l rootfs/etc/uci-defaults/99-set-wifi-defaults 2>/dev/null || true
-          cat rootfs/etc/uci-defaults/99-set-wifi-defaults 2>/dev/null || true
+          echo '=== LAN IP ==='
+          if grep -q "10\.1\.1\.1" $R/bin/config_generate 2>/dev/null; then
+            ok "config_generate uses 10.1.1.1"
+          else
+            bad "config_generate does not contain 10.1.1.1"
+          fi
+
+          echo '=== WiFi defaults ==='
+          MTW=$(find $R -name mtwifi.sh -path '*wifi*' 2>/dev/null | head -1)
+          if [ -n "$MTW" ] && grep -q 'ssid="hanzi"' "$MTW" && grep -q 'key="hanziwawa"' "$MTW"; then
+            ok "mtwifi.sh defaults: hanzi / hanziwawa ($MTW)"
+          else
+            bad "mtwifi.sh missing or defaults not applied ($MTW)"
+          fi
+          WF=$R/etc/uci-defaults/99-set-wifi-defaults
+          if [ -f "$WF" ] && grep -q 'hanzi' "$WF" && grep -q 'hanziwawa' "$WF"; then
+            ok "99-set-wifi-defaults present"
+          else
+            bad "99-set-wifi-defaults missing or wrong"
+          fi
+
+          echo '=== themes ==='
+          [ -d $R/www/luci-static/argon ] && ok "argon static files" || bad "argon static files missing"
+          [ -d $R/www/luci-static/fluent ] && ok "fluent static files" || bad "fluent static files missing"
+          [ -f $R/etc/uci-defaults/99-set-default-theme ] && ok "default-theme uci-defaults" || bad "default-theme uci-defaults missing"
+          grep -q "mediaurlbase=\"/luci-static/argon\"" $R/etc/uci-defaults/99-set-default-theme 2>/dev/null \
+            && ok "default theme is argon" || bad "default theme is not argon"
 
           echo '=== Open-Box installer ==='
-          ls -l rootfs/usr/sbin/openbox-install rootfs/etc/init.d/openbox-autoinstall rootfs/etc/uci-defaults/99-enable-openbox-autoinstall 2>/dev/null || true
+          for f in usr/sbin/openbox-install etc/init.d/openbox-autoinstall etc/uci-defaults/99-enable-openbox-autoinstall; do
+            [ -f "$R/$f" ] && ok "openbox: /$f" || bad "openbox: /$f missing"
+          done
 
-          echo '=== key packages ==='
-          grep '^P:' rootfs/lib/apk/db/installed 2>/dev/null | sed 's/^P://' | sort | \
-            grep -E '^(luci-app-(oaf|lucky|quickfile|diskman|upnp|samba4|filemanager|filebrowser)|quickfile|luci-nginx|nginx|openbox-installer|kmod-sched-bpf|kmod-xdp-sockets-diag|dae|daed)$' || true
+          echo '=== required packages ==='
+          for p in luci-app-oaf kmod-oaf luci-app-lucky lucky luci-app-quickfile quickfile \
+                   luci-nginx luci-app-diskman luci-app-upnp miniupnpd-nftables \
+                   kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth \
+                   luci-theme-argon luci-theme-fluent openbox-installer kmod-mt_wifi luci-app-mtwifi-cfg; do
+            want_pkg "$p"
+          done
+
+          echo '=== forbidden packages ==='
+          for p in luci-app-samba4 samba4-server luci-app-filemanager luci-app-filebrowser filebrowser \
+                   dae luci-app-dae daed dae-geoip dae-geosite luci-app-usb-printer p910nd luci-app-modem; do
+            deny_pkg "$p"
+          done
 
           echo '=== package count ==='
-          grep -c '^P:' rootfs/lib/apk/db/installed 2>/dev/null || true
+          echo "installed APK packages: $(grep -c '^P:' "$PK" 2>/dev/null || echo 0)"
+
+          echo
+          if [ "$FAIL" -ne 0 ]; then
+            echo "::error::verify failed: $FAIL check(s) failed"
+            exit 1
+          fi
+          echo "All checks passed."
