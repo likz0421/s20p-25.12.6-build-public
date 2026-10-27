@@ -1,0 +1,106 @@
+TTL进入failsafe模式：
+按住[f]键并不断按[enter]进入failsafe模式
+输入命令修改root账号密码为password，然后reboot重启
+echo -e 'password\npassword' | passwd root
+reboot
+
+系统启动后按回车，TTL登录root账号，设置dropbear开启并重启dropbear服务：
+uci set dropbear.@dropbear[0].enable='1'
+uci commit dropbear
+/etc/init.d/dropbear start
+
+可以直接TTL操作，当然也可以使用SSH软件登录192.168.8.1，端口22，账号root，密码password
+
+备份分区然后使用WinScp之类的软件到/tmp下载保存到电脑：
+dd if=/dev/mmcblk0boot0 of=/tmp/boot0_bl2.bin conv=fsync
+dd if=/dev/mmcblk0 bs=512 count=34 of=/tmp/mmcblk0_GPT.bin conv=fsync
+dd if=/dev/mmcblk0 bs=512 skip=34 count=8158 of=/tmp/mmcblk0_unpartitioned.bin conv=fsync
+dd if=/dev/mmcblk0p1 of=/tmp/mmcblk0p1_u-boot-env.bin conv=fsync
+dd if=/dev/mmcblk0p2 of=/tmp/mmcblk0p2_factory.bin conv=fsync
+dd if=/dev/mmcblk0p3 of=/tmp/mmcblk0p3_fip.bin conv=fsync
+dd if=/dev/mmcblk0p4 of=/tmp/mmcblk0p4_kernel.bin conv=fsync
+dd if=/dev/mmcblk0p5 of=/tmp/mmcblk0p5_rootfs.bin conv=fsync
+
+先删除缓存，再备份最后一个分区文件：
+rm -rf /permanent_config/watcher_data/yfcloud-50784b00fde02chi4da6/storage/.yfnode/cache/*
+tar -czvf /tmp/permanent_config.tar.gz /permanent_config
+
+如果需要恢复文件，使用下面命令：
+tar -xzvf /tmp/permanent_config.tar.gz -C /
+
+如果需要恢复原厂固件kernel+rootfs：
+dd if=/tmp/mmcblk0p4_kernel.bin of=$(blkid -t PARTLABEL=kernel -o device) conv=fsync
+dd if=/tmp/mmcblk0p5_rootfs.bin of=$(blkid -t PARTLABEL=rootfs -o device) conv=fsync
+
+
+刷uboot：
+dd if=/tmp/mt7986_clx_s20p-fip_legacy-and-fit_20241010.bin of=$(blkid -t PARTLABEL=fip -o device) conv=fsync
+md5sum $(blkid -t PARTLABEL=fip -o device)
+
+
+我的输出是这样的
+root@S20P:~# dd if=/tmp/mt7986_clx_s20p-fip_legacy-and-fit_20241010.bin of=$(blkid -t PARTLABEL=fip -o device) conv=fsync
+4096+0 records in
+4096+0 records out
+root@S20P:~# md5sum $(blkid -t PARTLABEL=fip -o device)
+211b89848fbe383f371433e7cb1889ab  /dev/mmcblk0p3
+
+
+uboot的使用：
+网线插入LAN1-5中的一个口，电脑设置IP 192.168.1.2/24，按住reset键上电路由器，等待SYS灯由闪烁变为常亮即可松开reset键。浏览器打开192.168.1.1刷固件，等待界面显示complete即成功刷写。
+
+
+先验证分区表md5，再刷入扩容分区表，使用空闲创建分区，label为permanent_config，尾部保留1G空白空间
+rootfs512M代表刷闭源固件.bin的空间，production512M代表刷开源固件.itb的空间，开源目前还未适配
+md5sum /tmp/clx_s20p_*gpt.bin
+dd if=/tmp/clx_s20p_rootfs512M_production512M-gpt.bin of=/dev/mmcblk0 bs=512 count=34 conv=fsync
+sgdisk -e -n 0:0:-1G -c 0:permanent_config -t 0:0FC63DAF-8483-4772-8E79-3D69D8477DE4 -u 0:5F73EF09-196E-4847-BE1E-69F2BD87E8B1 -p /dev/mmcblk0
+
+我的输出是这样的：
+root@ImmortalWrt:~# md5sum /tmp/clx_s20p_*gpt.bin
+e447f6f88bb8262055a9bd6547ce54df  /tmp/clx_s20p_rootfs1024M_production1024M-gpt.bin
+ccfd75bea7d8d2f4d5d75fc2d139cd8a  /tmp/clx_s20p_rootfs512M_production512M-gpt.bin
+root@ImmortalWrt:~# dd if=/tmp/clx_s20p_rootfs512M_production512M-gpt.bin of=/dev/mmcblk0 bs=512 count=34 conv=fsync
+34+0 records in
+34+0 records out
+root@ImmortalWrt:~# sgdisk -e -n 0:0:-1G -c 0:permanent_config -t 0:0FC63DAF-8483-4772-8E79-3D69D8477DE4 -u 0:5F73EF09-196E-4847-BE1E-69F2BD87E8B1 -p /dev/mmcblk0
+Setting name!
+partNum is 5
+Disk /dev/mmcblk0: 241696768 sectors, 115.3 GiB
+Sector size (logical/physical): 512/512 bytes
+Disk identifier (GUID): 2BD17853-102B-4500-AA1A-8A21D4D7984D
+Partition table holds up to 128 entries
+Main partition table begins at sector 2 and ends at sector 33
+First usable sector is 34, last usable sector is 241696734
+Partitions will be aligned on 1024-sector boundaries
+Total free space is 2105310 sectors (1.0 GiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            8192            9215   512.0 KiB   8300  u-boot-env
+   2            9216           13311   2.0 MiB     8300  factory
+   3           13312           17407   2.0 MiB     8300  fip
+   4           17408           82943   32.0 MiB    8300  kernel
+   5           82944         1131519   512.0 MiB   8300  rootfs
+   6         1131520         2180095   512.0 MiB   FFFF  production
+   7         2180096       239599582   113.2 GiB   8300  permanent_config
+Warning: The kernel is still using the old partition table.
+The new table will be used at the next reboot or after you
+run partprobe(8) or kpartx(8)
+The operation has completed successfully.
+
+
+刷好分区表后uboot重新刷固件，系统启动后SSH格式化permanent_config分区：
+mkfs.ext4 $(blkid -t PARTLABEL=permanent_config -o device)
+
+
+## 【【【切换21.02固件和23.05/master固件】】
+## 当前在23.05/master固件，要切换到21.02固件
+## 如下下面命令修改环境变量，没有报错即可，然后reboot重启
+cp /etc/fw_env.config /etc/fw_env.config.bak
+echo -e "/dev/mmcblk0p1 0 0x80000" > /etc/fw_env.config
+fw_setenv dual_boot.current_slot 0 ##设置启动21.02的bin固件
+cp /etc/fw_env.config.bak /etc/fw_env.config
+
+## 当前在21.02固件，要切换到23.05/master固件
+## 如下下面命令修改环境变量，没有报错即可，然后reboot重启
+fw_setenv dual_boot.current_slot 1 ##设置启动23.05、master的itb固件

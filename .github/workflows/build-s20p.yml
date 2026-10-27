@@ -65,7 +65,7 @@ jobs:
       run: |
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -yqq update
-        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev
+        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev zip
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
         sudo -E apt-get -yqq autoremove --purge
         sudo -E apt-get -yqq clean
@@ -120,7 +120,12 @@ jobs:
 
         make defconfig
 
-        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager openbox-installer; do
+        grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
+          echo "ERROR: initramfs is not enabled"
+          exit 1
+        }
+
+        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1
@@ -151,7 +156,28 @@ jobs:
         cp -v *clx_s20p* "$GITHUB_WORKSPACE/out/"
         cp -v config.buildinfo feeds.buildinfo profiles.json sha256sums "$GITHUB_WORKSPACE/out/" 2>/dev/null || true
         cd "$GITHUB_WORKSPACE/out"
+        rm -f sha256sums-s20p.txt
         sha256sum * > sha256sums-s20p.txt
+
+        UBOOT_ROOT="$GITHUB_WORKSPACE/uboot-pack"
+        UBOOT_DIR="$UBOOT_ROOT/S20P-25.12.6-uboot"
+        rm -rf "$UBOOT_ROOT"
+        mkdir -p "$UBOOT_DIR/firmware" "$UBOOT_DIR/bootloader"
+        INITRAMFS=$(ls *clx_s20p*-initramfs-kernel.bin 2>/dev/null | head -n1 || true)
+        SYSUPGRADE=$(ls *clx_s20p*-squashfs-sysupgrade.bin 2>/dev/null | head -n1 || true)
+        [ -n "$INITRAMFS" ] || { echo "ERROR: initramfs image missing"; exit 1; }
+        [ -n "$SYSUPGRADE" ] || { echo "ERROR: sysupgrade image missing"; exit 1; }
+        cp -v "$INITRAMFS" "$UBOOT_DIR/firmware/"
+        cp -v "$SYSUPGRADE" "$UBOOT_DIR/firmware/"
+        cp -v *clx_s20p*.manifest "$UBOOT_DIR/firmware/" 2>/dev/null || true
+        cp -v "$GITHUB_WORKSPACE/uboot-files/"*.bin "$UBOOT_DIR/bootloader/"
+        cp -v "$GITHUB_WORKSPACE/uboot-files/README-uboot.txt" "$UBOOT_DIR/"
+        cp -v "$GITHUB_WORKSPACE/uboot-files/lgs-说明.txt" "$UBOOT_DIR/"
+        (cd "$UBOOT_DIR/firmware" && rm -f sha256sums.txt && sha256sum * > sha256sums.txt)
+        (cd "$UBOOT_DIR/bootloader" && rm -f sha256sums.txt && sha256sum * > sha256sums.txt)
+        (cd "$UBOOT_ROOT" && zip -r "$GITHUB_WORKSPACE/out/S20P-25.12.6-uboot.zip" S20P-25.12.6-uboot)
+        cd "$GITHUB_WORKSPACE/out"
+        sha256sum S20P-25.12.6-uboot.zip >> sha256sums-s20p.txt
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -176,5 +202,8 @@ jobs:
           - Default WiFi: SSID `hanzi`, WPA2-PSK password `hanziwawa`
           - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
-          - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, USB printer, mtwifi-cfg
-          - Upgrade: sysupgrade only; do not keep the 24.10 config.
+          - UPnP/file apps: luci-app-upnp + miniupnpd-nftables, luci-app-filemanager, luci-app-filebrowser, luci-app-diskman, luci-app-samba4
+          - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)
+          - USB printer: not included
+          - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, mtwifi-cfg
+          - Upgrade: sysupgrade or U-Boot; do not keep the 24.10 config.

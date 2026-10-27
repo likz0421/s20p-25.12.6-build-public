@@ -21,7 +21,7 @@ if [ ! -d "$ROOT/scripts" ] || [ ! -f "$ROOT/configs/s20p.config" ]; then
 	exit 1
 fi
 
-for cmd in git make gcc python3 rsync unzip; do
+for cmd in git make gcc python3 rsync unzip zip; do
 	if ! command -v "$cmd" >/dev/null 2>&1; then
 		echo "Missing build dependency: $cmd"
 		echo "Install the OpenWrt build environment first:"
@@ -84,7 +84,12 @@ fi
 
 make defconfig
 
-for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-usb-printer luci-app-firewall luci-app-package-manager openbox-installer; do
+grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
+	echo "ERROR: initramfs is not enabled"
+	exit 1
+}
+
+for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4; do
 	if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
 		echo "ERROR: package ${pkg} was dropped by make defconfig"
 		exit 1
@@ -107,6 +112,26 @@ cp -v config.buildinfo feeds.buildinfo profiles.json sha256sums "$ROOT/out/" 2>/
 cd "$ROOT/out"
 rm -f sha256sums-s20p.txt
 sha256sum * > sha256sums-s20p.txt
+
+UBOOT_ROOT="$ROOT/uboot-pack"
+UBOOT_DIR="$UBOOT_ROOT/S20P-25.12.6-uboot"
+rm -rf "$UBOOT_ROOT"
+mkdir -p "$UBOOT_DIR/firmware" "$UBOOT_DIR/bootloader"
+INITRAMFS=$(ls *clx_s20p*-initramfs-kernel.bin 2>/dev/null | head -n1 || true)
+SYSUPGRADE=$(ls *clx_s20p*-squashfs-sysupgrade.bin 2>/dev/null | head -n1 || true)
+[ -n "$INITRAMFS" ] || { echo "ERROR: initramfs image missing"; exit 1; }
+[ -n "$SYSUPGRADE" ] || { echo "ERROR: sysupgrade image missing"; exit 1; }
+cp -v "$INITRAMFS" "$UBOOT_DIR/firmware/"
+cp -v "$SYSUPGRADE" "$UBOOT_DIR/firmware/"
+cp -v *clx_s20p*.manifest "$UBOOT_DIR/firmware/" 2>/dev/null || true
+cp -v "$ROOT/uboot-files/"*.bin "$UBOOT_DIR/bootloader/"
+cp -v "$ROOT/uboot-files/README-uboot.txt" "$UBOOT_DIR/"
+cp -v "$ROOT/uboot-files/lgs-说明.txt" "$UBOOT_DIR/"
+(cd "$UBOOT_DIR/firmware" && rm -f sha256sums.txt && sha256sum * > sha256sums.txt)
+(cd "$UBOOT_DIR/bootloader" && rm -f sha256sums.txt && sha256sum * > sha256sums.txt)
+(cd "$UBOOT_ROOT" && zip -r "$ROOT/out/S20P-25.12.6-uboot.zip" S20P-25.12.6-uboot)
+cd "$ROOT/out"
+sha256sum S20P-25.12.6-uboot.zip >> sha256sums-s20p.txt
 
 echo "==> done: $ROOT/out"
 ls -lh
