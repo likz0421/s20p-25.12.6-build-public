@@ -1,0 +1,7 @@
+* text=auto
+*.sh text eol=lf
+*.patch text eol=lf
+configs/* text eol=lf
+.github/workflows/* text eol=lf
+packages/* text eol=lf
+scripts/* text eol=lf
