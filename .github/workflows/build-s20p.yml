@@ -130,6 +130,21 @@ jobs:
           exit 1
         }
 
+        grep -q '^VERSION_NUMBER:=25.12.6$' include/version.mk || {
+          echo "ERROR: firmware version pin is missing"
+          exit 1
+        }
+
+        grep -q 'ssid="hanzi"' package/mtk/applications/mtwifi-cfg/files/mtwifi.sh || {
+          echo "ERROR: default WiFi SSID is missing"
+          exit 1
+        }
+
+        grep -q 'key=hanziwawa' package/mtk/applications/mtwifi-cfg/files/mtwifi.sh || {
+          echo "ERROR: default WiFi key is missing"
+          exit 1
+        }
+
         grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
           echo "ERROR: initramfs is not enabled"
           exit 1
@@ -149,7 +164,7 @@ jobs:
           fi
         done
 
-        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4 kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
+        for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1
@@ -218,7 +233,7 @@ jobs:
         files: out/*
         body: |
           - Source: ${{ env.REPO_URL }} (branch ${{ env.REPO_BRANCH }}, commit ${{ env.REPO_COMMIT }})
-          - Version: 25.12.6 (kernel 6.12.112)
+          - Version: 25.12.6 (kernel 6.12.112; mac80211/backports 6.18.55)
           - Device: CLX/Super Gateway S20P (`clx_s20p`)
           - LAN: ${{ env.LAN_IP }}
           - Default theme: ${{ env.DEFAULT_THEME }}
@@ -226,7 +241,7 @@ jobs:
           - Default WiFi: SSID `hanzi`, WPA2-PSK password `hanziwawa`
           - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
-          - UPnP/file apps: luci-app-upnp + miniupnpd-nftables, luci-app-filemanager, luci-app-filebrowser, luci-app-diskman, luci-app-samba4
+          - UPnP/file: luci-app-upnp + miniupnpd-nftables, luci-app-quickfile + quickfile, luci-app-diskman; Samba/file sharing removed
           - eBPF: BTF/BPF_EVENTS/KPROBE_EVENTS enabled; kmod-sched-core, kmod-sched-bpf, kmod-xdp-sockets-diag and kmod-veth included for dae. dae/daed themselves are not bundled; install dae from the feed when needed.
           - Kernel: 6.12.112 (mac80211/backports 6.18.55)
           - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)

@@ -94,6 +94,21 @@ grep -q '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_clx_s20p=y$' .config || {
 	exit 1
 }
 
+grep -q '^VERSION_NUMBER:=25.12.6$' include/version.mk || {
+	echo "ERROR: firmware version pin is missing"
+	exit 1
+}
+
+grep -q 'ssid="hanzi"' package/mtk/applications/mtwifi-cfg/files/mtwifi.sh || {
+	echo "ERROR: default WiFi SSID is missing"
+	exit 1
+}
+
+grep -q 'key=hanziwawa' package/mtk/applications/mtwifi-cfg/files/mtwifi.sh || {
+	echo "ERROR: default WiFi key is missing"
+	exit 1
+}
+
 grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
 	echo "ERROR: initramfs is not enabled"
 	exit 1
@@ -113,7 +128,7 @@ for sym in CONFIG_BPF_SYSCALL CONFIG_BPF_JIT; do
 	fi
 done
 
-for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-filemanager luci-app-filebrowser luci-app-diskman luci-app-samba4 kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
+for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
 	if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
 		echo "ERROR: package ${pkg} was dropped by make defconfig"
 		exit 1

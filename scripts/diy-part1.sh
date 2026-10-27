@@ -26,6 +26,10 @@ rm -rf /tmp/luci-theme-fluent
 git clone --depth 1 --branch v1.0.9 https://github.com/LazuliKao/luci-theme-fluent.git /tmp/luci-theme-fluent
 cp -a /tmp/luci-theme-fluent/package/* package/
 
+echo "==> luci-app-quickfile (same file manager as 24.10)"
+rm -rf package/quickfile
+git clone --depth 1 https://github.com/sbwml/luci-app-quickfile.git package/quickfile
+
 echo "==> Open-Box official installer"
 rm -rf package/openbox-installer
 cp -a "$ROOT/packages/openbox-installer" package/

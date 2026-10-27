@@ -1,0 +1,58 @@
+name: verify-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      TAG:
+        description: 'Release tag (empty = latest)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install squashfs-tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq squashfs-tools
+
+      - name: Download and inspect image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.TAG }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName')
+          fi
+          echo "TAG=$TAG"
+          mkdir -p img
+          gh release download "$TAG" --repo "${{ github.repository }}" --pattern '*squashfs-sysupgrade.bin' --dir img
+          cd img
+          tar xf *squashfs-sysupgrade.bin
+          unsquashfs -d rootfs sysupgrade-*/root >/dev/null
+
+          echo '=== /etc/openwrt_release ==='
+          cat rootfs/etc/openwrt_release
+
+          echo '=== WiFi defaults in mtwifi.sh ==='
+          grep -n 'hanzi\|hanziwawa' rootfs/lib/wifi/mtwifi.sh || true
+
+          echo '=== WiFi uci-defaults ==='
+          ls -l rootfs/etc/uci-defaults/99-set-wifi-defaults 2>/dev/null || true
+          cat rootfs/etc/uci-defaults/99-set-wifi-defaults 2>/dev/null || true
+
+          echo '=== Open-Box installer ==='
+          ls -l rootfs/usr/sbin/openbox-install rootfs/etc/init.d/openbox-autoinstall rootfs/etc/uci-defaults/99-enable-openbox-autoinstall 2>/dev/null || true
+
+          echo '=== key packages ==='
+          grep '^P:' rootfs/lib/apk/db/installed 2>/dev/null | sed 's/^P://' | sort | \
+            grep -E '^(luci-app-(oaf|lucky|quickfile|diskman|upnp|samba4|filemanager|filebrowser)|quickfile|luci-nginx|nginx|openbox-installer|kmod-sched-bpf|kmod-xdp-sockets-diag|dae|daed)$' || true
+
+          echo '=== package count ==='
+          grep -c '^P:' rootfs/lib/apk/db/installed 2>/dev/null || true
