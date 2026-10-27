@@ -51,6 +51,14 @@ sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" package/base-files/files/bin/confi
 
 echo "==> set default theme and Chinese UI"
 THEME="${DEFAULT_THEME:-argon}"
+LUCI_CFG=feeds/luci/modules/luci-base/root/etc/config/luci
+if [ -f "$LUCI_CFG" ] && grep -q '^[[:space:]]*option mediaurlbase' "$LUCI_CFG"; then
+	sed -i "s#^\(\s*option mediaurlbase\s*\).*#\1/luci-static/$THEME#" "$LUCI_CFG"
+	grep -q "mediaurlbase /luci-static/$THEME" "$LUCI_CFG" \
+		|| { echo "ERROR: failed to bake default theme into luci config"; exit 1; }
+else
+	echo "WARNING: mediaurlbase not found in $LUCI_CFG; first-boot uci-defaults will set it"
+fi
 cat > package/base-files/files/etc/uci-defaults/99-set-default-theme <<EOF
 #!/bin/sh
 
@@ -84,5 +92,10 @@ wifi reload >/dev/null 2>&1 || true
 exit 0
 EOF
 chmod 0755 package/base-files/files/etc/uci-defaults/99-set-wifi-defaults
+
+echo "==> ucode crash guards (unregistered functions + POSIX ERE)"
+GUARD_DIRS="feeds/luci package/OpenAppFilter package/lucky package/luci-theme-argon package/luci-theme-fluent package/quickfile"
+python3 "$ROOT/scripts/ucode_guard.py" $GUARD_DIRS
+python3 "$ROOT/scripts/posix_re_check.py" $GUARD_DIRS
 
 echo "==> done: LAN_IP=$SET_IP THEME=$THEME"
