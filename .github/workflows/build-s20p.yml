@@ -135,9 +135,16 @@ jobs:
           exit 1
         }
 
-        for sym in CONFIG_KERNEL_DEBUG_INFO_BTF CONFIG_KERNEL_BPF_EVENTS CONFIG_KERNEL_BPF_SYSCALL; do
+        for sym in CONFIG_KERNEL_DEBUG_INFO_BTF CONFIG_KERNEL_BPF_EVENTS; do
           if ! grep -q "^${sym}=y$" .config; then
             echo "ERROR: ${sym} is not enabled"
+            exit 1
+          fi
+        done
+
+        for sym in CONFIG_BPF_SYSCALL CONFIG_BPF_JIT; do
+          if ! grep -q "^${sym}=y$" target/linux/generic/config-6.12; then
+            echo "ERROR: ${sym} missing from generic kernel config"
             exit 1
           fi
         done
