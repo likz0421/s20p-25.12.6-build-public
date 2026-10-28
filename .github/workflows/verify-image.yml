@@ -63,11 +63,14 @@ jobs:
           fi
 
           echo '=== WiFi defaults ==='
-          MTW=$(find $R -name mtwifi.sh -path '*wifi*' 2>/dev/null | head -1)
-          if [ -n "$MTW" ] && grep -q 'ssid="hanzi"' "$MTW" && grep -q 'key=hanziwawa' "$MTW"; then
+          echo '--- mtwifi.sh files ---'
+          find $R -name mtwifi.sh -exec ls -l {} \;
+          find $R -name mtwifi.sh -exec sh -c 'echo "### $1"; grep -n "ImmortalWrt\|hanzi\|hanziwawa\|encryption" "$1" | head -12' _ {} \;
+          MTW=$R/lib/wifi/mtwifi.sh
+          if [ -f "$MTW" ] && grep -q 'ssid="hanzi"' "$MTW" && grep -q 'key=hanziwawa' "$MTW"; then
             ok "mtwifi.sh defaults: hanzi / hanziwawa ($MTW)"
           else
-            bad "mtwifi.sh missing or defaults not applied ($MTW)"
+            bad "mtwifi.sh defaults not applied ($MTW)"
           fi
           WF=$R/etc/uci-defaults/99-set-wifi-defaults
           if [ -f "$WF" ] && grep -q 'hanzi' "$WF" && grep -q 'hanziwawa' "$WF"; then
