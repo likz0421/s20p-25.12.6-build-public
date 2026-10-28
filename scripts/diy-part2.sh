@@ -123,12 +123,6 @@ mkdir -p package/base-files/files/etc/apk/keys
 cp "$ROOT/packages/fantastic-feed/fantastic-packages-20241123170031.pem" \
 	package/base-files/files/etc/apk/keys/fantastic-packages-20241123170031.pem
 chmod 0644 package/base-files/files/etc/apk/keys/fantastic-packages-20241123170031.pem
-mkdir -p package/base-files/files/etc/apk/repositories.d
-cat > package/base-files/files/etc/apk/repositories.d/customfeeds.list <<'EOF'
-https://fantastic-packages.github.io/releases/25.12/packages/aarch64_cortex-a53/packages/packages.adb
-https://fantastic-packages.github.io/releases/25.12/packages/aarch64_cortex-a53/luci/packages.adb
-https://fantastic-packages.github.io/releases/25.12/packages/aarch64_cortex-a53/special/packages.adb
-EOF
 cat > package/base-files/files/etc/uci-defaults/99-add-fantastic-feed <<'EOF'
 #!/bin/sh
 F=/etc/apk/repositories.d/customfeeds.list

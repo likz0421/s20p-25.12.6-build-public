@@ -188,8 +188,8 @@ jobs:
           exit 1
         }
 
-        grep -q 'fantastic-packages.github.io/releases/25.12' package/base-files/files/etc/apk/repositories.d/customfeeds.list || {
-          echo "ERROR: fantastic-packages feed is missing"
+        grep -q 'fantastic-packages.github.io/releases/25.12' package/base-files/files/etc/uci-defaults/99-add-fantastic-feed || {
+          echo "ERROR: fantastic-packages feed setup is missing"
           exit 1
         }
 
