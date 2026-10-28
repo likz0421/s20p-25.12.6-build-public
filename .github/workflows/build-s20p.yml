@@ -185,12 +185,20 @@ jobs:
           exit 1
         }
 
-        [ "$(grep -c 'realtek,led-link-select = <0xa7 0xa7 0x0>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
-          echo "ERROR: RTL8221B link-select is not all-speed for both PHYs"
+        [ "$(grep -c 'realtek,led-link-select = <0x27 0x27 0x27>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
+          echo "ERROR: RTL8221B link-select is not 0x27 0x27 0x27 for both PHYs"
           exit 1
         }
-        [ "$(grep -c 'realtek,led-act-select = <0x321b>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
-          echo "ERROR: RTL8221B act-select is not 0x321b for both PHYs"
+        [ "$(grep -c 'realtek,led-act-select = <0x7>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
+          echo "ERROR: RTL8221B act-select is not 0x7 for both PHYs"
+          exit 1
+        }
+        [ -f target/linux/mediatek/patches-6.12/734-net-phy-realtek-apply-led-config-on-rtl822xb.patch ] || {
+          echo "ERROR: RTL8221B C45 LED kernel patch is missing"
+          exit 1
+        }
+        grep -q 'rtl8221b_config_led(phydev)' target/linux/mediatek/patches-6.12/734-net-phy-realtek-apply-led-config-on-rtl822xb.patch || {
+          echo "ERROR: RTL8221B C45 LED kernel patch is malformed"
           exit 1
         }
 
@@ -321,7 +329,7 @@ jobs:
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
           - UPnP/file: luci-app-upnp + miniupnpd-nftables, luci-app-quickfile + quickfile, luci-app-diskman; Samba/file sharing removed
           - LuCI extras: ttyd web terminal, Argon config app, zh_cn core translation
-          - 2.5G LEDs: RTL8221B `led-link-select = <0xa7 0xa7 0x0>`, `led-act-select = <0x321b>` for both PHYs (both LEDs link at all speeds); `mdio-tools` included for live PHY register checks
+          - 2.5G LEDs: RTL8221B C45 LED path enabled via kernel patch; `led-link-select = <0x27 0x27 0x27>` (10/100/1000/2.5G on all LED pins), `led-act-select = <0x7>` (activity on all pins); `mdio-tools` included for live PHY register checks
           - OAF removed by user request (no `luci-app-oaf`/`kmod-oaf`/`appfilter`)
           - Third-party feed: fantastic-packages 25.12 (aarch64_cortex-a53) public key and repository are preconfigured (`/etc/apk/keys/`, first-boot `customfeeds.list`); this trusts packages signed by that key. Kmods from third-party feeds may not match this kernel — prefer userspace packages only.
           - eBPF: BTF/BPF_EVENTS/KPROBE_EVENTS enabled; kmod-sched-core, kmod-sched-bpf, kmod-xdp-sockets-diag and kmod-veth included for dae. dae/daed themselves are not bundled; install dae from the feed when needed.

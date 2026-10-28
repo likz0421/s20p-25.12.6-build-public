@@ -6,8 +6,8 @@
  		realtek,aldps-enable;
 -		realtek,led-link-select = <0xa7 0x03 0x0>;
 -		realtek,led-act-select = <0x001b>;
-+		realtek,led-link-select = <0xa7 0xa7 0x0>;
-+		realtek,led-act-select = <0x321b>;
++		realtek,led-link-select = <0x27 0x27 0x27>;
++		realtek,led-act-select = <0x7>;
  	};
  
  	phy7: ethernet-phy@7 {
@@ -17,8 +17,8 @@
  		realtek,aldps-enable;
 -		realtek,led-link-select = <0xa7 0x03 0x0>;
 -		realtek,led-act-select = <0x001b>;
-+		realtek,led-link-select = <0xa7 0xa7 0x0>;
-+		realtek,led-act-select = <0x321b>;
++		realtek,led-link-select = <0x27 0x27 0x27>;
++		realtek,led-act-select = <0x7>;
  	};
  };
  
