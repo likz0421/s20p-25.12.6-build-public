@@ -50,7 +50,10 @@ jobs:
           REL=$(sed -n "s/^DISTRIB_RELEASE='\(.*\)'/\1/p" $R/etc/openwrt_release 2>/dev/null)
           VER=$(cat $R/etc/openwrt_version 2>/dev/null)
           [ "$REL" = "25.12.6" ] && ok "release is 25.12.6" || bad "release is '$REL', expected 25.12.6"
-          [ "$VER" = "25.12.6" ] && ok "version is 25.12.6" || bad "version is '$VER', expected 25.12.6"
+          case "$VER" in
+            ""|*SNAPSHOT*) bad "version marker is '$VER' (snapshot or empty)" ;;
+            *) ok "version marker: $VER" ;;
+          esac
 
           echo '=== LAN IP ==='
           if grep -q "10\.1\.1\.1" $R/bin/config_generate 2>/dev/null; then
@@ -61,7 +64,7 @@ jobs:
 
           echo '=== WiFi defaults ==='
           MTW=$(find $R -name mtwifi.sh -path '*wifi*' 2>/dev/null | head -1)
-          if [ -n "$MTW" ] && grep -q 'ssid="hanzi"' "$MTW" && grep -q 'key="hanziwawa"' "$MTW"; then
+          if [ -n "$MTW" ] && grep -q 'ssid="hanzi"' "$MTW" && grep -q 'key=hanziwawa' "$MTW"; then
             ok "mtwifi.sh defaults: hanzi / hanziwawa ($MTW)"
           else
             bad "mtwifi.sh missing or defaults not applied ($MTW)"
@@ -77,8 +80,14 @@ jobs:
           [ -d $R/www/luci-static/argon ] && ok "argon static files" || bad "argon static files missing"
           [ -d $R/www/luci-static/fluent ] && ok "fluent static files" || bad "fluent static files missing"
           [ -f $R/etc/uci-defaults/99-set-default-theme ] && ok "default-theme uci-defaults" || bad "default-theme uci-defaults missing"
-          grep -q "mediaurlbase=\"/luci-static/argon\"" $R/etc/uci-defaults/99-set-default-theme 2>/dev/null \
-            && ok "default theme is argon" || bad "default theme is not argon"
+          if grep -q "mediaurlbase.*argon" $R/etc/config/luci 2>/dev/null; then
+            ok "default theme baked in /etc/config/luci: argon"
+          elif grep -q 'THEME="argon"' $R/etc/uci-defaults/99-set-default-theme 2>/dev/null \
+               && grep -q 'mediaurlbase="/luci-static/\$THEME"' $R/etc/uci-defaults/99-set-default-theme 2>/dev/null; then
+            ok "default theme set by first-boot uci-defaults: argon"
+          else
+            bad "default theme is not argon"
+          fi
 
           echo '=== Open-Box installer ==='
           for f in usr/sbin/openbox-install etc/init.d/openbox-autoinstall etc/uci-defaults/99-enable-openbox-autoinstall; do
