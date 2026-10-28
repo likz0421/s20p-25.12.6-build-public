@@ -158,6 +158,26 @@ jobs:
           exit 1
         }
 
+        grep -q '^CONFIG_LUCI_LANG_zh_Hans=y$' .config || {
+          echo "ERROR: LuCI zh_Hans language support was dropped"
+          exit 1
+        }
+
+        grep -q "option lang 'zh_cn'" feeds/luci/modules/luci-base/root/etc/config/luci || {
+          echo "ERROR: default LuCI language is not zh_cn"
+          exit 1
+        }
+
+        if grep -q 'realtek,led-act-select\|realtek,led-link-select' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts; then
+          echo "ERROR: RTL8221B LED overrides are back; 2.5G link LED will stay dark"
+          exit 1
+        fi
+
+        [ -x package/base-files/files/etc/uci-defaults/99-fix-distfeeds ] || {
+          echo "ERROR: package-feed reset script is missing"
+          exit 1
+        }
+
         grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
           echo "ERROR: initramfs is not enabled"
           exit 1
@@ -177,7 +197,7 @@ jobs:
           fi
         done
 
-        for pkg in kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
+        for pkg in kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1

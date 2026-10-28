@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT/openwrt"
 
+echo "==> drop unused video feed (its packages.adb is often truncated)"
+sed -i '/^src-git.* video /d' feeds.conf.default
+
 echo "==> OAF v7.0.1"
 rm -rf package/OpenAppFilter
 git clone --depth 1 --branch v7.0.1 https://github.com/destan19/OpenAppFilter.git package/OpenAppFilter

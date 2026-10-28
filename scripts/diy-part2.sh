@@ -9,6 +9,7 @@ git apply "$ROOT/patches/0001-s20p-supported-devices.patch"
 git apply "$ROOT/patches/0002-s20p-uboot-envtools.patch"
 git apply "$ROOT/patches/0003-s20p-default-wifi.patch"
 git apply "$ROOT/patches/0005-s20p-default-wifi-ucode.patch"
+git apply "$ROOT/patches/0006-s20p-restore-phy-led-defaults.patch"
 
 echo "==> pin firmware version"
 sed -i 's#^VERSION_NUMBER:=$(if $(VERSION_NUMBER),$(VERSION_NUMBER),25.12-SNAPSHOT)$#VERSION_NUMBER:=25.12.6#' include/version.mk
@@ -60,6 +61,11 @@ if [ -f "$LUCI_CFG" ] && grep -q '^[[:space:]]*option mediaurlbase' "$LUCI_CFG";
 else
 	echo "WARNING: mediaurlbase not found in $LUCI_CFG; first-boot uci-defaults will set it"
 fi
+if [ -f "$LUCI_CFG" ]; then
+	sed -i "s#^\(\s*option lang\s*\).*#\1'zh_cn'#" "$LUCI_CFG"
+	grep -q "option lang 'zh_cn'" "$LUCI_CFG" \
+		|| { echo "ERROR: failed to bake zh_cn language"; exit 1; }
+fi
 cat > package/base-files/files/etc/uci-defaults/99-set-default-theme <<EOF
 #!/bin/sh
 
@@ -93,6 +99,24 @@ wifi reload >/dev/null 2>&1 || true
 exit 0
 EOF
 chmod 0755 package/base-files/files/etc/uci-defaults/99-set-wifi-defaults
+
+echo "==> reset package feeds to official ImmortalWrt mirror"
+cat > package/base-files/files/etc/uci-defaults/99-fix-distfeeds <<'EOF'
+#!/bin/sh
+FEEDS=/etc/apk/repositories.d/distfeeds.list
+BASE=https://downloads.immortalwrt.org/releases/25.12-SNAPSHOT
+mkdir -p /etc/apk/repositories.d
+cat > "$FEEDS" <<LIST
+$BASE/targets/mediatek/filogic/packages/packages.adb
+$BASE/packages/aarch64_cortex-a53/base/packages.adb
+$BASE/packages/aarch64_cortex-a53/luci/packages.adb
+$BASE/packages/aarch64_cortex-a53/packages/packages.adb
+$BASE/packages/aarch64_cortex-a53/routing/packages.adb
+$BASE/packages/aarch64_cortex-a53/telephony/packages.adb
+LIST
+exit 0
+EOF
+chmod 0755 package/base-files/files/etc/uci-defaults/99-fix-distfeeds
 
 echo "==> ucode crash guards (unregistered functions + POSIX ERE)"
 GUARD_DIRS="feeds/luci package/OpenAppFilter package/lucky package/luci-theme-argon package/luci-theme-fluent package/quickfile"

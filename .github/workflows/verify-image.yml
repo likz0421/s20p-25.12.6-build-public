@@ -93,6 +93,25 @@ jobs:
           else
             bad "default theme is not argon"
           fi
+          if grep -q "option lang 'zh_cn'" $R/etc/config/luci 2>/dev/null; then
+            ok "default LuCI language: zh_cn"
+          else
+            bad "default LuCI language is not zh_cn"
+          fi
+
+          echo '=== package feeds ==='
+          FEEDLIST=$R/etc/apk/repositories.d/distfeeds.list
+          if [ -f "$FEEDLIST" ]; then
+            if grep -q 'downloads.immortalwrt.org' "$FEEDLIST" && ! grep -q 'vsean\|/video/' "$FEEDLIST"; then
+              ok "distfeeds uses official ImmortalWrt mirror without video feed"
+            else
+              bad "distfeeds is not the official mirror or still contains video"
+              cat "$FEEDLIST"
+            fi
+          else
+            bad "missing $FEEDLIST"
+          fi
+          [ -f $R/etc/uci-defaults/99-fix-distfeeds ] && ok "distfeeds reset uci-defaults" || bad "distfeeds reset uci-defaults missing"
 
           echo '=== Open-Box installer ==='
           for f in usr/sbin/openbox-install etc/init.d/openbox-autoinstall etc/uci-defaults/99-enable-openbox-autoinstall; do
@@ -103,7 +122,7 @@ jobs:
           for p in luci-app-oaf kmod-oaf luci-app-lucky lucky luci-app-quickfile quickfile \
                    luci-nginx luci-app-diskman luci-app-upnp miniupnpd-nftables \
                    kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth \
-                   luci-theme-argon luci-theme-fluent openbox-installer kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg; do
+                   luci-theme-argon luci-theme-fluent openbox-installer kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-i18n-base-zh-cn; do
             want_pkg "$p"
           done
 
