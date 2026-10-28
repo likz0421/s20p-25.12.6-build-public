@@ -1,20 +1,24 @@
 --- a/target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts
 +++ b/target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts
-@@ -29,8 +29,6 @@
+@@ -29,8 +29,8 @@
  		interrupt-parent = <&pio>;
  		interrupts = <47 IRQ_TYPE_LEVEL_LOW>;
  		realtek,aldps-enable;
 -		realtek,led-link-select = <0xa7 0x03 0x0>;
 -		realtek,led-act-select = <0x001b>;
++		realtek,led-link-select = <0xa7 0xa7 0x0>;
++		realtek,led-act-select = <0x321b>;
  	};
  
  	phy7: ethernet-phy@7 {
-@@ -42,8 +40,6 @@
+@@ -42,8 +42,8 @@
  		interrupt-parent = <&pio>;
  		interrupts = <46 IRQ_TYPE_LEVEL_LOW>;
  		realtek,aldps-enable;
 -		realtek,led-link-select = <0xa7 0x03 0x0>;
 -		realtek,led-act-select = <0x001b>;
++		realtek,led-link-select = <0xa7 0xa7 0x0>;
++		realtek,led-act-select = <0x321b>;
  	};
  };
  

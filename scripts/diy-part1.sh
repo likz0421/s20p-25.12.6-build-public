@@ -7,9 +7,6 @@ cd "$ROOT/openwrt"
 echo "==> drop unused video feed (its packages.adb is often truncated)"
 sed -i '/^src-git.* video /d' feeds.conf.default
 
-echo "==> OAF v7.0.1"
-rm -rf package/OpenAppFilter
-git clone --depth 1 --branch v7.0.1 https://github.com/destan19/OpenAppFilter.git package/OpenAppFilter
 
 echo "==> luci-app-lucky (pinned)"
 rm -rf package/lucky
@@ -20,9 +17,10 @@ else
 	echo "WARNING: pinned Lucky commit is not fetchable; using branch HEAD"
 fi
 
-echo "==> Argon v3.1.0"
+echo "==> Argon v3.1.1"
 rm -rf package/luci-theme-argon
-git clone --depth 1 --branch v3.1.0 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
+git clone --depth 1 --branch v3.1.1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
+grep -q 'PKG_VERSION:=3.1.1' package/luci-theme-argon/Makefile || { echo "ERROR: Argon is not 3.1.1"; exit 1; }
 
 echo "==> Fluent v1.0.9"
 rm -rf /tmp/luci-theme-fluent
@@ -38,7 +36,6 @@ rm -rf package/openbox-installer
 cp -a "$ROOT/packages/openbox-installer" package/
 
 echo "==> package versions"
-git -C package/OpenAppFilter describe --tags --always
 git -C package/lucky rev-parse --short HEAD
 git -C package/luci-theme-argon describe --tags --always
 git -C /tmp/luci-theme-fluent describe --tags --always

@@ -128,7 +128,7 @@ for sym in CONFIG_BPF_SYSCALL CONFIG_BPF_JIT; do
 	fi
 done
 
-for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
+for pkg in kmod-mt_wifi luci-app-mtwifi-cfg luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth mdio-tools; do
 	if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
 		echo "ERROR: package ${pkg} was dropped by make defconfig"
 		exit 1

@@ -153,6 +153,18 @@ jobs:
           exit 1
         }
 
+        grep -q 'PKG_VERSION:=3.1.1' package/luci-theme-argon/Makefile || {
+          echo "ERROR: Argon theme is not 3.1.1"
+          exit 1
+        }
+
+        for gone in luci-app-oaf kmod-oaf appfilter; do
+          if grep -q "^CONFIG_PACKAGE_${gone}=y$" .config; then
+            echo "ERROR: OAF package ${gone} should have been removed"
+            exit 1
+          fi
+        done
+
         grep -q 'ssid: "hanzi"' package/mtk/applications/mtwifi-cfg-ucode/files/lib/wifi/mtwifi.uc || {
           echo "ERROR: default WiFi SSID is missing"
           exit 1
@@ -173,10 +185,14 @@ jobs:
           exit 1
         }
 
-        if grep -q 'realtek,led-act-select\|realtek,led-link-select' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts; then
-          echo "ERROR: RTL8221B LED overrides are back; 2.5G link LED will stay dark"
+        [ "$(grep -c 'realtek,led-link-select = <0xa7 0xa7 0x0>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
+          echo "ERROR: RTL8221B link-select is not all-speed for both PHYs"
           exit 1
-        fi
+        }
+        [ "$(grep -c 'realtek,led-act-select = <0x321b>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
+          echo "ERROR: RTL8221B act-select is not 0x321b for both PHYs"
+          exit 1
+        }
 
         [ -x package/base-files/files/etc/uci-defaults/99-fix-distfeeds ] || {
           echo "ERROR: package-feed reset script is missing"
@@ -217,7 +233,7 @@ jobs:
           fi
         done
 
-        for pkg in kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky lucky luci-theme-argon luci-app-argon-config luci-theme-fluent luci-app-firewall luci-app-package-manager luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx ttyd luci-app-ttyd luci-i18n-ttyd-zh-cn luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
+        for pkg in kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-app-lucky lucky luci-theme-argon luci-app-argon-config luci-theme-fluent luci-app-firewall luci-app-package-manager luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx ttyd luci-app-ttyd luci-i18n-ttyd-zh-cn luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth mdio-tools; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1
@@ -302,15 +318,16 @@ jobs:
           - Default theme: ${{ env.DEFAULT_THEME }}
           - WiFi: ${{ env.WIFI_COMBO }}
           - Default WiFi: SSID `hanzi`, WPA2-PSK password `hanziwawa`
-          - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
           - UPnP/file: luci-app-upnp + miniupnpd-nftables, luci-app-quickfile + quickfile, luci-app-diskman; Samba/file sharing removed
           - LuCI extras: ttyd web terminal, Argon config app, zh_cn core translation
-          - Third-party feed: fantastic-packages 25.12 (aarch64_cortex-a53) public key and repository are preconfigured (`/etc/apk/keys/`, `customfeeds.list`); this trusts packages signed by that key. Kmods from third-party feeds may not match this kernel — prefer userspace packages only.
+          - 2.5G LEDs: RTL8221B `led-link-select = <0xa7 0xa7 0x0>`, `led-act-select = <0x321b>` for both PHYs (both LEDs link at all speeds); `mdio-tools` included for live PHY register checks
+          - OAF removed by user request (no `luci-app-oaf`/`kmod-oaf`/`appfilter`)
+          - Third-party feed: fantastic-packages 25.12 (aarch64_cortex-a53) public key and repository are preconfigured (`/etc/apk/keys/`, first-boot `customfeeds.list`); this trusts packages signed by that key. Kmods from third-party feeds may not match this kernel — prefer userspace packages only.
           - eBPF: BTF/BPF_EVENTS/KPROBE_EVENTS enabled; kmod-sched-core, kmod-sched-bpf, kmod-xdp-sockets-diag and kmod-veth included for dae. dae/daed themselves are not bundled; install dae from the feed when needed.
           - Kernel: 6.12.112 (mac80211/backports 6.18.55)
           - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)
           - USB printer: not included
-          - Packages: OAF 7.0.1, Lucky 3.5.0 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, mtwifi-cfg
+          - Packages: Lucky 3.5.0 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.1, Fluent 1.0.9, ttyd, mtwifi-cfg
           - Upgrade: sysupgrade or U-Boot; do not keep the 24.10 config.
           - Important: do NOT run `apk upgrade` — kernel and kmods are built as one image, a full upgrade can break the system. Use `apk add <package>` for individual plugins; feeds already point to the official ImmortalWrt 25.12-SNAPSHOT repository.

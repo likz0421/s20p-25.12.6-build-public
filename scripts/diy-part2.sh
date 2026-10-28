@@ -9,7 +9,7 @@ git apply "$ROOT/patches/0001-s20p-supported-devices.patch"
 git apply "$ROOT/patches/0002-s20p-uboot-envtools.patch"
 git apply "$ROOT/patches/0003-s20p-default-wifi.patch"
 git apply "$ROOT/patches/0005-s20p-default-wifi-ucode.patch"
-git apply "$ROOT/patches/0006-s20p-restore-phy-led-defaults.patch"
+git apply "$ROOT/patches/0006-s20p-2.5g-led-config.patch"
 
 echo "==> pin firmware version"
 sed -i 's#^VERSION_NUMBER:=$(if $(VERSION_NUMBER),$(VERSION_NUMBER),25.12-SNAPSHOT)$#VERSION_NUMBER:=25.12.6#' include/version.mk
@@ -140,7 +140,7 @@ EOF
 chmod 0755 package/base-files/files/etc/uci-defaults/99-add-fantastic-feed
 
 echo "==> ucode crash guards (unregistered functions + POSIX ERE)"
-GUARD_DIRS="feeds/luci package/OpenAppFilter package/lucky package/luci-theme-argon package/luci-theme-fluent package/quickfile"
+GUARD_DIRS="feeds/luci package/lucky package/luci-theme-argon package/luci-theme-fluent package/quickfile"
 python3 "$ROOT/scripts/ucode_guard.py" $GUARD_DIRS
 python3 "$ROOT/scripts/posix_re_check.py" $GUARD_DIRS
 
