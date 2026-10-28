@@ -145,6 +145,13 @@ jobs:
             deny_pkg "$p"
           done
 
+          echo '=== package versions ==='
+          if grep -A1 '^P:lucky$' "$PK" 2>/dev/null | grep -q '^V:3.5.0'; then
+            ok "Lucky core version 3.5.0"
+          else
+            bad "Lucky core is not 3.5.0"
+          fi
+
           echo '=== package count ==='
           echo "installed APK packages: $(grep -c '^P:' "$PK" 2>/dev/null || echo 0)"
 
