@@ -183,6 +183,21 @@ jobs:
           exit 1
         }
 
+        [ -f package/base-files/files/etc/apk/keys/fantastic-packages-20241123170031.pem ] || {
+          echo "ERROR: fantastic-packages public key is missing"
+          exit 1
+        }
+
+        grep -q 'fantastic-packages.github.io/releases/25.12' package/base-files/files/etc/apk/repositories.d/customfeeds.list || {
+          echo "ERROR: fantastic-packages feed is missing"
+          exit 1
+        }
+
+        [ -x package/base-files/files/etc/uci-defaults/99-add-fantastic-feed ] || {
+          echo "ERROR: fantastic feed uci-defaults is missing"
+          exit 1
+        }
+
         grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y$' .config || {
           echo "ERROR: initramfs is not enabled"
           exit 1
@@ -291,6 +306,7 @@ jobs:
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
           - UPnP/file: luci-app-upnp + miniupnpd-nftables, luci-app-quickfile + quickfile, luci-app-diskman; Samba/file sharing removed
           - LuCI extras: ttyd web terminal, Argon config app, zh_cn core translation
+          - Third-party feed: fantastic-packages 25.12 (aarch64_cortex-a53) public key and repository are preconfigured (`/etc/apk/keys/`, `customfeeds.list`); this trusts packages signed by that key. Kmods from third-party feeds may not match this kernel — prefer userspace packages only.
           - eBPF: BTF/BPF_EVENTS/KPROBE_EVENTS enabled; kmod-sched-core, kmod-sched-bpf, kmod-xdp-sockets-diag and kmod-veth included for dae. dae/daed themselves are not bundled; install dae from the feed when needed.
           - Kernel: 6.12.112 (mac80211/backports 6.18.55)
           - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)

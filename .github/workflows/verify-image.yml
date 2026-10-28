@@ -112,6 +112,19 @@ jobs:
             bad "missing $FEEDLIST"
           fi
           [ -f $R/etc/uci-defaults/99-fix-distfeeds ] && ok "distfeeds reset uci-defaults" || bad "distfeeds reset uci-defaults missing"
+          KEY=$R/etc/apk/keys/fantastic-packages-20241123170031.pem
+          if [ -f "$KEY" ] && head -1 "$KEY" | grep -q 'BEGIN PUBLIC KEY'; then
+            ok "fantastic-packages public key installed"
+          else
+            bad "fantastic-packages public key missing or invalid"
+          fi
+          CUSTOM=$R/etc/apk/repositories.d/customfeeds.list
+          if [ -f "$CUSTOM" ] && grep -q 'fantastic-packages.github.io/releases/25.12' "$CUSTOM"; then
+            ok "fantastic-packages feed configured"
+          else
+            bad "fantastic-packages feed missing from customfeeds.list"
+          fi
+          [ -f $R/etc/uci-defaults/99-add-fantastic-feed ] && ok "fantastic feed uci-defaults" || bad "fantastic feed uci-defaults missing"
 
           echo '=== Open-Box installer ==='
           for f in usr/sbin/openbox-install etc/init.d/openbox-autoinstall etc/uci-defaults/99-enable-openbox-autoinstall; do
