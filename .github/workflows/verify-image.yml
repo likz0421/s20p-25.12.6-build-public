@@ -69,7 +69,7 @@ jobs:
           else
             echo "missing $MTW"
           fi
-          if [ -f "$MTW" ] && grep -q 'ssid: "hanzi"' "$MTW" && grep -q 'key: "hanziwawa"' "$MTW"; then
+          if [ -f "$MTW" ] && grep -q 'ssid: "hanzi"' "$MTW" && grep -q '"key": "hanziwawa"' "$MTW"; then
             ok "mtwifi.uc defaults: hanzi / hanziwawa"
           else
             bad "mtwifi.uc defaults not applied"
