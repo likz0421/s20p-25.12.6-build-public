@@ -63,14 +63,16 @@ jobs:
           fi
 
           echo '=== WiFi defaults ==='
-          echo '--- mtwifi.sh files ---'
-          find $R -name mtwifi.sh -exec ls -l {} \;
-          find $R -name mtwifi.sh -exec sh -c 'echo "### $1"; grep -n "ImmortalWrt\|hanzi\|hanziwawa\|encryption" "$1" | head -12' _ {} \;
-          MTW=$R/lib/wifi/mtwifi.sh
-          if [ -f "$MTW" ] && grep -q 'ssid="hanzi"' "$MTW" && grep -q 'key=hanziwawa' "$MTW"; then
-            ok "mtwifi.sh defaults: hanzi / hanziwawa ($MTW)"
+          MTW=$R/lib/wifi/mtwifi.uc
+          if [ -f "$MTW" ]; then
+            grep -n 'ssid\|hanzi\|key\|encryption' "$MTW" | head -12
           else
-            bad "mtwifi.sh defaults not applied ($MTW)"
+            echo "missing $MTW"
+          fi
+          if [ -f "$MTW" ] && grep -q 'ssid: "hanzi"' "$MTW" && grep -q 'key: "hanziwawa"' "$MTW"; then
+            ok "mtwifi.uc defaults: hanzi / hanziwawa"
+          else
+            bad "mtwifi.uc defaults not applied"
           fi
           WF=$R/etc/uci-defaults/99-set-wifi-defaults
           if [ -f "$WF" ] && grep -q 'hanzi' "$WF" && grep -q 'hanziwawa' "$WF"; then
@@ -101,7 +103,7 @@ jobs:
           for p in luci-app-oaf kmod-oaf luci-app-lucky lucky luci-app-quickfile quickfile \
                    luci-nginx luci-app-diskman luci-app-upnp miniupnpd-nftables \
                    kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth \
-                   luci-theme-argon luci-theme-fluent openbox-installer kmod-mt_wifi luci-app-mtwifi-cfg; do
+                   luci-theme-argon luci-theme-fluent openbox-installer kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg; do
             want_pkg "$p"
           done
 

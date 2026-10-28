@@ -1,0 +1,27 @@
+--- a/package/mtk/applications/mtwifi-cfg-ucode/files/lib/wifi/mtwifi.uc
++++ b/package/mtk/applications/mtwifi-cfg-ucode/files/lib/wifi/mtwifi.uc
+@@ -44,9 +44,9 @@
+ function get_band_defaults(band) {
+     if (band == "2g") {
+-        return { htmode: "HE40", htbsscoex: 1, ssid: "ImmortalWrt-2.4G" };
++        return { htmode: "HE40", htbsscoex: 1, ssid: "hanzi" };
+     } else if (band == "5g") {
+-        return { htmode: "HE160", htbsscoex: 0, ssid: "ImmortalWrt-5G" };
++        return { htmode: "HE160", htbsscoex: 0, ssid: "hanzi" };
+     } else {
+-        return { htmode: "HE160", htbsscoex: 0, ssid: "ImmortalWrt-6G" };
++        return { htmode: "HE160", htbsscoex: 0, ssid: "hanzi" };
+     }
+ }
+@@ -108,7 +108,8 @@
+     set_section_options("wireless", iface_name, {
+         "device": devname,
+         "network": "lan",
+         "mode": "ap",
+         "ssid": defs.ssid,
+-        "encryption": "none"
++        "encryption": "psk2",
++        "key": "hanziwawa"
+     });
+ 
+     need_commit = true;
