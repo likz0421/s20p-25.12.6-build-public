@@ -148,6 +148,11 @@ jobs:
           exit 1
         }
 
+        grep -q '^PKG_VERSION:=3.5.0$' package/lucky/lucky/Makefile || {
+          echo "ERROR: Lucky core is not 3.5.0"
+          exit 1
+        }
+
         grep -q 'ssid: "hanzi"' package/mtk/applications/mtwifi-cfg-ucode/files/lib/wifi/mtwifi.uc || {
           echo "ERROR: default WiFi SSID is missing"
           exit 1
@@ -197,7 +202,7 @@ jobs:
           fi
         done
 
-        for pkg in kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky luci-theme-argon luci-theme-fluent luci-app-firewall luci-app-package-manager luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
+        for pkg in kmod-mt_wifi mtwifi-cfg-ucode luci-app-mtwifi-cfg luci-app-oaf luci-app-lucky lucky luci-theme-argon luci-app-argon-config luci-theme-fluent luci-app-firewall luci-app-package-manager luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn openbox-installer luci-app-upnp luci-app-quickfile quickfile luci-nginx ttyd luci-app-ttyd luci-i18n-ttyd-zh-cn luci-app-diskman kmod-sched-core kmod-sched-bpf kmod-xdp-sockets-diag kmod-veth; do
           if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
             echo "ERROR: package ${pkg} was dropped by make defconfig"
             exit 1
@@ -285,9 +290,11 @@ jobs:
           - OAF: v7.0.1, feature library bundled at `/etc/fwxd/feature.bin`
           - Open-Box: official installer included; first boot downloads the proprietary arm64 package from the official GitHub Release (not bundled here). Panel: port 3036; LuCI fallback page installed by the official script.
           - UPnP/file: luci-app-upnp + miniupnpd-nftables, luci-app-quickfile + quickfile, luci-app-diskman; Samba/file sharing removed
+          - LuCI extras: ttyd web terminal, Argon config app, zh_cn core translation
           - eBPF: BTF/BPF_EVENTS/KPROBE_EVENTS enabled; kmod-sched-core, kmod-sched-bpf, kmod-xdp-sockets-diag and kmod-veth included for dae. dae/daed themselves are not bundled; install dae from the feed when needed.
           - Kernel: 6.12.112 (mac80211/backports 6.18.55)
           - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)
           - USB printer: not included
-          - Packages: OAF 7.0.1, Lucky 3.4.2 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, mtwifi-cfg
+          - Packages: OAF 7.0.1, Lucky 3.5.0 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.0, Fluent 1.0.9, mtwifi-cfg
           - Upgrade: sysupgrade or U-Boot; do not keep the 24.10 config.
+          - Important: do NOT run `apk upgrade` — kernel and kmods are built as one image, a full upgrade can break the system. Use `apk add <package>` for individual plugins; feeds already point to the official ImmortalWrt 25.12-SNAPSHOT repository.
