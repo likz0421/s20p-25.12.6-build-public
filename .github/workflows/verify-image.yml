@@ -33,7 +33,8 @@ jobs:
           mkdir -p img && cd img
           gh release download "$TAG" --repo "${{ github.repository }}" --pattern '*squashfs-sysupgrade.bin' --dir .
           tar xf *squashfs-sysupgrade.bin
-          unsquashfs -d rootfs sysupgrade-*/root >/dev/null
+          sudo unsquashfs -no-progress -d rootfs sysupgrade-*/root >/dev/null
+          sudo chmod -R a+rX rootfs
           R=rootfs
           PK="$R/lib/apk/db/installed"
 
