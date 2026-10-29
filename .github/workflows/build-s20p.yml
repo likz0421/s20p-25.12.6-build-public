@@ -65,12 +65,22 @@ jobs:
       run: |
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -yqq update
-        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev zip dwarves
+        sudo -E apt-get -yqq install curl dos2unix python3-netifaces libfuse-dev zip dwarves ccache
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
         sudo -E apt-get -yqq autoremove --purge
         sudo -E apt-get -yqq clean
         sudo timedatectl set-timezone "$TZ"
         df -hT
+
+    - name: Restore ccache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.ccache
+        key: ccache-${{ env.REPO_COMMIT }}-${{ hashFiles('configs/s20p.config') }}-${{ github.run_id }}
+        restore-keys: |
+          ccache-${{ env.REPO_COMMIT }}-${{ hashFiles('configs/s20p.config') }}-
+          ccache-${{ env.REPO_COMMIT }}-
+          ccache-
 
     - name: Clone source
       run: |
@@ -241,6 +251,19 @@ jobs:
           exit 1
         }
 
+        grep -q '^CONFIG_CCACHE=y$' .config || {
+          echo "ERROR: ccache was dropped from the config"
+          exit 1
+        }
+        grep -q '^CONFIG_CCACHE_DIR="/home/runner/.ccache"$' .config || {
+          echo "ERROR: ccache directory is not set"
+          exit 1
+        }
+        command -v ccache >/dev/null 2>&1 || {
+          echo "ERROR: ccache binary is missing"
+          exit 1
+        }
+
         for sym in CONFIG_KERNEL_DEBUG_INFO_BTF CONFIG_KERNEL_BPF_EVENTS; do
           if ! grep -q "^${sym}=y$" .config; then
             echo "ERROR: ${sym} is not enabled"
@@ -283,9 +306,20 @@ jobs:
           export TMPDIR=/mnt/tmp
         fi
         echo "$(nproc) threads"
+        export CCACHE_DIR="$HOME/.ccache"
+        export CCACHE_MAXSIZE=4G
+        ccache -M 4G >/dev/null 2>&1 || true
         df -hT .
         make -j"$(nproc)" || make -j1 || make -j1 V=s
         df -hT .
+        ccache -s || true
+
+    - name: Save ccache
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.ccache
+        key: ccache-${{ env.REPO_COMMIT }}-${{ hashFiles('configs/s20p.config') }}-${{ github.run_id }}
 
     - name: Collect output
       run: |
