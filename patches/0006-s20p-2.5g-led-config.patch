@@ -7,7 +7,7 @@
 -		realtek,led-link-select = <0xa7 0x03 0x0>;
 -		realtek,led-act-select = <0x001b>;
 +		realtek,led-link-select = <0x27 0x27 0x27>;
-+		realtek,led-act-select = <0x7>;
++		realtek,led-act-select = <0x1>;
  	};
  
  	phy7: ethernet-phy@7 {
@@ -18,7 +18,7 @@
 -		realtek,led-link-select = <0xa7 0x03 0x0>;
 -		realtek,led-act-select = <0x001b>;
 +		realtek,led-link-select = <0x27 0x27 0x27>;
-+		realtek,led-act-select = <0x7>;
++		realtek,led-act-select = <0x1>;
  	};
  };
  
