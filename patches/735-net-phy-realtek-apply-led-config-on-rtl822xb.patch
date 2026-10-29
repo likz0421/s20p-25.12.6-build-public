@@ -1,0 +1,24 @@
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -1274,6 +1274,9 @@
+ 	return 0;
+ }
+ 
++static int rtl8221b_config_led(struct phy_device *phydev);
++static u32 rtl8221b_led_done;
++
+ static int rtl822xb_c45_read_status(struct phy_device *phydev)
+ {
+ 	int ret;
+@@ -1284,6 +1287,11 @@
+ 
+ 	rtl822xb_update_interface(phydev);
+ 
++	if (!(rtl8221b_led_done & (1U << phydev->mdio.addr))) {
++		rtl8221b_led_done |= 1U << phydev->mdio.addr;
++		rtl8221b_config_led(phydev);
++	}
++
+ 	return 0;
+ }
+ 

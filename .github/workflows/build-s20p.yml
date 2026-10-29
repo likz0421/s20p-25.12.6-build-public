@@ -217,11 +217,11 @@ jobs:
           echo "ERROR: RTL8221B act-select is not 0x7 for both PHYs"
           exit 1
         }
-        [ -f target/linux/mediatek/patches-6.12/734-net-phy-realtek-apply-led-config-on-rtl822xb.patch ] || {
+        [ -f target/linux/mediatek/patches-6.12/735-net-phy-realtek-apply-led-config-on-rtl822xb.patch ] || {
           echo "ERROR: RTL8221B C45 LED kernel patch is missing"
           exit 1
         }
-        grep -q 'rtl8221b_config_led(phydev)' target/linux/mediatek/patches-6.12/734-net-phy-realtek-apply-led-config-on-rtl822xb.patch || {
+        grep -q 'rtl8221b_config_led(phydev)' target/linux/mediatek/patches-6.12/735-net-phy-realtek-apply-led-config-on-rtl822xb.patch || {
           echo "ERROR: RTL8221B C45 LED kernel patch is malformed"
           exit 1
         }

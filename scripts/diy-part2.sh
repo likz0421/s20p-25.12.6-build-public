@@ -12,7 +12,7 @@ git apply "$ROOT/patches/0005-s20p-default-wifi-ucode.patch"
 git apply "$ROOT/patches/0006-s20p-2.5g-led-config.patch"
 
 echo "==> install RTL8221B C45 LED kernel patch"
-cp "$ROOT/patches/734-net-phy-realtek-apply-led-config-on-rtl822xb.patch" \
+cp "$ROOT/patches/735-net-phy-realtek-apply-led-config-on-rtl822xb.patch" \
 	target/linux/mediatek/patches-6.12/
 
 echo "==> pin firmware version"
