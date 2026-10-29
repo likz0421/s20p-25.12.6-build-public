@@ -46,6 +46,9 @@ cp "$ROOT/packages/lucky/Makefile" package/lucky/lucky/Makefile
 
 echo "==> set Fluent package version"
 sed -i 's/PKG_VERSION:=1.0.8/PKG_VERSION:=1.0.9/' package/luci-theme-fluent/Makefile
+sed -i '/^PKG_VERSION:=1.0.9$/a PKG_PO_VERSION:=1.0.9' package/luci-theme-fluent/Makefile
+grep -q '^PKG_PO_VERSION:=1.0.9$' package/luci-theme-fluent/Makefile \
+	|| { echo "ERROR: failed to set Fluent i18n version"; exit 1; }
 
 echo "==> set LAN IP"
 SET_IP="${LAN_IP:-10.1.1.1}"

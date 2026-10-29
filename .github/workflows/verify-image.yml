@@ -156,6 +156,16 @@ jobs:
           else
             bad "Argon theme is not 3.1.1"
           fi
+          if grep -A1 '^P:openbox-installer$' "$PK" 2>/dev/null | grep -q '^V:0.1.371'; then
+            ok "Open-Box installer version 0.1.371"
+          else
+            bad "Open-Box installer is not 0.1.371"
+          fi
+          if grep -A1 '^P:luci-i18n-fluent-zh-cn$' "$PK" 2>/dev/null | grep -q '^V:1.0.9'; then
+            ok "Fluent zh-cn i18n version 1.0.9"
+          else
+            bad "Fluent zh-cn i18n version is not 1.0.9"
+          fi
 
           echo '=== package count ==='
           echo "installed APK packages: $(grep -c '^P:' "$PK" 2>/dev/null || echo 0)"

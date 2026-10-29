@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openbox-installer
-PKG_VERSION:=0.1.369
+PKG_VERSION:=0.1.371
 PKG_RELEASE:=1
 
 PKG_LICENSE:=Proprietary
