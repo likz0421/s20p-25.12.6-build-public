@@ -405,6 +405,6 @@ jobs:
           - Kernel: 6.12.112 (mac80211/backports 6.18.55)
           - U-Boot pack: S20P-25.12.6-uboot.zip (sysupgrade + initramfs + optional fip/GPT + README)
           - USB printer: not included
-          - Packages: Lucky 3.5.0 XiaoJV + LuCI 3.0.0-r30, Argon 3.1.3 (default theme), ttyd, mtwifi-cfg; Fluent removed
+          - Packages: Lucky 3.5.0 (official arm64) + LuCI 3.0.0-r30, Argon 3.1.3 (default theme), ttyd, mtwifi-cfg; Fluent removed
           - Upgrade: sysupgrade or U-Boot; do not keep the 24.10 config.
           - Important: do NOT run `apk upgrade` — kernel and kmods are built as one image, a full upgrade can break the system. Use `apk add <package>` for individual plugins; feeds already point to the official ImmortalWrt 25.12-SNAPSHOT repository.

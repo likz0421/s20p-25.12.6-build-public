@@ -41,7 +41,7 @@ config server '_lan'
 	option access_log 'off; # logd openwrt'
 EOF
 
-echo "==> install Lucky 3.5.0 XiaoJV core Makefile"
+echo "==> install Lucky 3.5.0 core Makefile (official arm64)"
 cp "$ROOT/packages/lucky/Makefile" package/lucky/lucky/Makefile
 
 echo "==> set LAN IP"

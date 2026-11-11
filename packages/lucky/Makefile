@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
-# Custom core package for Lucky 3.5.0 XiaoJV (official binary is not in the GitHub build source).
+# Custom core package for Lucky 3.5.0 (official aarch64 build from the GitHub release).
+# Note: the XiaoJV variant was dropped upstream after v1.10.8, so this pins the
+# official Linux arm64 build instead.
 
 include $(TOPDIR)/rules.mk
 
@@ -12,9 +14,9 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=GDY666 <gdy666@foxmail.com>
 
 LUCKY_ARCH:=arm64
-PKG_SOURCE:=lucky_3.5.0_Linux_arm64_xiaojv.tar.gz
-PKG_SOURCE_URL:=https://release.66666.host/v3.5.0/3.5.0_xiaojv
-PKG_HASH:=fa0ed690ae591a10ed426b37bd6a2b584704ed1c7e9ab2a180a8bf3643a0eee4
+PKG_SOURCE:=lucky_3.5.0_Linux_arm64.tar.gz
+PKG_SOURCE_URL:=https://github.com/gdy666/lucky/releases/download/v3.5.0
+PKG_HASH:=e79982e1733d51b3237838e251bbc606e65aad1904884fb65a427d57bb6f83e3
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -22,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/lucky
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Lucky network utility (3.5.0 XiaoJV)
+  TITLE:=Lucky network utility (3.5.0)
   DEPENDS:=@aarch64
   URL:=https://github.com/gdy666/lucky
 endef
