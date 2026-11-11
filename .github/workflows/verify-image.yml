@@ -195,15 +195,15 @@ jobs:
           else
             bad "Lucky core is not 3.5.0"
           fi
-          if grep -A1 '^P:luci-theme-argon$' "$PK" 2>/dev/null | grep -q '^V:3.1.1'; then
-            ok "Argon theme version 3.1.1"
+          if grep -A1 '^P:luci-theme-argon$' "$PK" 2>/dev/null | grep -q '^V:3.1.3'; then
+            ok "Argon theme version 3.1.3"
           else
-            bad "Argon theme is not 3.1.1"
+            bad "Argon theme is not 3.1.3"
           fi
-          if grep -A1 '^P:honk$' "$PK" 2>/dev/null | grep -q '^V:0.1.0_beta4'; then
-            ok "honk version 0.1.0_beta4 (pinned upstream release)"
+          if grep -A1 '^P:honk$' "$PK" 2>/dev/null | grep -q '^V:0.1.0_beta6'; then
+            ok "honk version 0.1.0_beta6 (pinned upstream release)"
           else
-            bad "honk is not 0.1.0_beta4"
+            bad "honk is not 0.1.0_beta6"
           fi
           echo "themes present in /www/luci-static: $(ls $R/www/luci-static/ 2>/dev/null | tr '\n' ' ')"
 

@@ -11,25 +11,28 @@ sed -i '/^src-git.* video /d' feeds.conf.default
 echo "==> luci-app-lucky (pinned)"
 rm -rf package/lucky
 git clone --depth 1 https://github.com/gdy666/luci-app-lucky.git package/lucky
-git -C package/lucky fetch --depth 1 origin 295115bd07a6748f4137e1bdf98600bc99625d01 \
+git -C package/lucky fetch --depth 1 origin b07f65c28bb5fa3da1fea4b8af5ce24a1488e79a \
 	|| { echo "ERROR: pinned Lucky commit is not fetchable; refusing to use a moving HEAD"; exit 1; }
-git -C package/lucky checkout --detach 295115bd07a6748f4137e1bdf98600bc99625d01
+git -C package/lucky checkout --detach b07f65c28bb5fa3da1fea4b8af5ce24a1488e79a
 
-echo "==> Argon v3.1.1 (默认主题)"
+echo "==> Argon v3.1.3 (默认主题)"
 rm -rf package/luci-theme-argon
-git clone --depth 1 --branch v3.1.1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
-grep -q 'PKG_VERSION:=3.1.1' package/luci-theme-argon/Makefile || { echo "ERROR: Argon is not 3.1.1"; exit 1; }
+git clone --depth 1 --branch v3.1.3 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
+grep -q 'PKG_VERSION:=3.1.3' package/luci-theme-argon/Makefile || { echo "ERROR: Argon is not 3.1.3"; exit 1; }
 
-echo "==> luci-app-quickfile (same file manager as 24.10)"
+echo "==> luci-app-quickfile (same file manager as 24.10, pinned)"
 rm -rf package/quickfile
 git clone --depth 1 https://github.com/sbwml/luci-app-quickfile.git package/quickfile
+git -C package/quickfile fetch --depth 1 origin ef2ca5d16ad1156539930d8763c3069f6ac4eb12 \
+	|| { echo "ERROR: pinned quickfile commit is not fetchable; refusing to use a moving HEAD"; exit 1; }
+git -C package/quickfile checkout --detach ef2ca5d16ad1156539930d8763c3069f6ac4eb12
 
 echo "==> honk + luci apps (daeuniverse/openwrt-packages, pinned)"
 rm -rf /tmp/daeuniverse
 git clone --depth 1 https://github.com/daeuniverse/openwrt-packages.git /tmp/daeuniverse
-git -C /tmp/daeuniverse fetch --depth 1 origin f7107cf1b7e47fa24c90933207e8dd273f80f11a \
+git -C /tmp/daeuniverse fetch --depth 1 origin 8110e50c4ca762e13aa57875ef1d6cc4dbdc1074 \
 	|| { echo "ERROR: pinned daeuniverse commit is not fetchable; refusing to use a moving HEAD"; exit 1; }
-git -C /tmp/daeuniverse checkout --detach f7107cf1b7e47fa24c90933207e8dd273f80f11a
+git -C /tmp/daeuniverse checkout --detach 8110e50c4ca762e13aa57875ef1d6cc4dbdc1074
 for p in honk luci-app-honk luci-lib-daeuniverse; do
 	rm -rf "package/$p"
 	cp -a "/tmp/daeuniverse/$p" package/

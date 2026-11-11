@@ -4,7 +4,7 @@ CLX / Super Gateway **S20P**（`clx_s20p`，MT7986A Filogic）专用 ImmortalWrt
 
 - 版本：ImmortalWrt **25.12.6**，内核 **6.12.112**（mac80211/backports 6.18.55）
 - 设备：`clx_s20p`（mediatek/filogic），默认 LAN `10.1.1.1`
-- 主题：**Argon v3.1.1**（默认），界面 `zh_cn`
+- 主题：**Argon v3.1.3**（默认），界面 `zh_cn`
 - 默认 WiFi：SSID `hanzi`，WPA2-PSK 密码 `hanziwawa`
 - 代理：**honk**（Open-Box 的替代，eBPF 透明代理，出厂禁用，需自己加节点/规则后开启）
 - 端口灯：**luci-app-ethled**（LuCI 网络 → 网口指示灯），RTL8221B（LAN6 / 2.5G WAN）可逐灯控制
@@ -44,14 +44,14 @@ bash scripts/build-on-server.sh
 上游源码与第三方包都 **pinned commit** 锁定：
 
 - 上游源码 `chasey-dev/immortalwrt-mt798x-rebase` @ `9f397975…`
-- Lucky `gdy666/luci-app-lucky` @ `295115bd…`
-- honk 相关 `daeuniverse/openwrt-packages` @ `f7107cf1…`
+- Lucky `gdy666/luci-app-lucky` @ `b07f65c2…`
+- honk 相关 `daeuniverse/openwrt-packages` @ `8110e50c…`
 
 pinned commit fetch 不到时 **直接报错退出**（不静默回退到分支 HEAD），保证构建可复现、不漂移。
 
 ## 已知限制与风险（务必阅读）
 
-1. **honk 上游为 early alpha**（`v0.1.0-beta.4`）：官方标注预期 breaking changes，升级需重新验证。honk-core 用官方 aarch64 静态 musl 发布版（SHA256 已 pin）。
+1. **honk 上游为 early alpha**（`v0.1.0-beta.6`）：官方标注预期 breaking changes，升级需重新验证。honk-core 用官方 aarch64 静态 musl 发布版（SHA256 已 pin）。
 2. **MT7531 LAN1-5 端口灯寄存器布局无文档**：该板 switch LED 位定义未公开，`ethled` 对 LAN1-5 的写入默认关闭（`switch_lan=0`）。要开启前先用 `ethled dump` 或 LuCI「读取寄存器」对照，确认位布局再打开。LAN6 / WAN 的 RTL8221B 已由内核 patch 735 路径覆盖。
 3. **第三方 feed 信任**：`fantastic-packages 25.12` 公钥与仓库已预置（`/etc/apk/keys/`，首次开机写 `customfeeds.list`）。装该 feed 的包等于信任其签名方；**第三方 kmods 可能与本内核不匹配**，建议只用 userspace 包。
 4. **不要 `apk upgrade`**：内核与 kmods 是同一镜像整体构建，全量升级可能搞坏系统；装插件用 `apk add <package>`。升级系统走 sysupgrade 或 U-Boot，**不要保留 24.10 的配置**。

@@ -18,14 +18,14 @@ PKG_DIR:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=honk
-PKG_VERSION:=0.1.0_beta4
+PKG_VERSION:=0.1.0_beta6
 PKG_RELEASE:=1
 
-HONK_TAG:=v0.1.0-beta.4
+HONK_TAG:=v0.1.0-beta.6
 HONK_ARCH:=aarch64-unknown-linux-musl-full
 PKG_SOURCE:=honk-core-$(HONK_TAG)-$(HONK_ARCH).tar.gz
 PKG_SOURCE_URL:=https://github.com/daeuniverse/honk/releases/download/$(HONK_TAG)/
-PKG_HASH:=121c94f3a30091c5550ae503ddf7bce118def08ddc301a7f8ffa740f956476d0
+PKG_HASH:=5e4c0359950e0f19fac53e31ef9ffbe9f0aafca92331c3fa81e5b56212950a6e
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 HONK_UNPACK_DIR:=honk-core-$(HONK_TAG)-$(HONK_ARCH)
 
