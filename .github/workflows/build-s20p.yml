@@ -235,7 +235,7 @@ jobs:
           exit 1
         }
         [ "$(grep -c 'realtek,led-act-select = <0x1>' target/linux/mediatek/dts-ext/mt7986a-clx-s20p.dts)" = "2" ] || {
-          echo "ERROR: RTL8221B act-select is not 0x7 for both PHYs"
+          echo "ERROR: RTL8221B act-select is not 0x1 for both PHYs"
           exit 1
         }
         [ -f target/linux/mediatek/patches-6.12/735-net-phy-realtek-apply-led-config-on-rtl822xb.patch ] || {
