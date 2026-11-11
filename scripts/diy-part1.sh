@@ -11,11 +11,9 @@ sed -i '/^src-git.* video /d' feeds.conf.default
 echo "==> luci-app-lucky (pinned)"
 rm -rf package/lucky
 git clone --depth 1 https://github.com/gdy666/luci-app-lucky.git package/lucky
-if git -C package/lucky fetch --depth 1 origin 295115bd07a6748f4137e1bdf98600bc99625d01; then
-	git -C package/lucky checkout --detach 295115bd07a6748f4137e1bdf98600bc99625d01
-else
-	echo "WARNING: pinned Lucky commit is not fetchable; using branch HEAD"
-fi
+git -C package/lucky fetch --depth 1 origin 295115bd07a6748f4137e1bdf98600bc99625d01 \
+	|| { echo "ERROR: pinned Lucky commit is not fetchable; refusing to use a moving HEAD"; exit 1; }
+git -C package/lucky checkout --detach 295115bd07a6748f4137e1bdf98600bc99625d01
 
 echo "==> Argon v3.1.1 (默认主题)"
 rm -rf package/luci-theme-argon
@@ -29,11 +27,9 @@ git clone --depth 1 https://github.com/sbwml/luci-app-quickfile.git package/quic
 echo "==> honk + luci apps (daeuniverse/openwrt-packages, pinned)"
 rm -rf /tmp/daeuniverse
 git clone --depth 1 https://github.com/daeuniverse/openwrt-packages.git /tmp/daeuniverse
-if git -C /tmp/daeuniverse fetch --depth 1 origin f7107cf1b7e47fa24c90933207e8dd273f80f11a; then
-	git -C /tmp/daeuniverse checkout --detach f7107cf1b7e47fa24c90933207e8dd273f80f11a
-else
-	echo "WARNING: pinned daeuniverse commit is not fetchable; using branch HEAD"
-fi
+git -C /tmp/daeuniverse fetch --depth 1 origin f7107cf1b7e47fa24c90933207e8dd273f80f11a \
+	|| { echo "ERROR: pinned daeuniverse commit is not fetchable; refusing to use a moving HEAD"; exit 1; }
+git -C /tmp/daeuniverse checkout --detach f7107cf1b7e47fa24c90933207e8dd273f80f11a
 for p in honk luci-app-honk luci-lib-daeuniverse; do
 	rm -rf "package/$p"
 	cp -a "/tmp/daeuniverse/$p" package/

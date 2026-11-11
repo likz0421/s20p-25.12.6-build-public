@@ -97,11 +97,9 @@ jobs:
         df -hT "$(dirname "$BUILD_ROOT")"
         git clone --depth 1 -b "$REPO_BRANCH" "$REPO_URL" "$BUILD_ROOT"
         ln -sfn "$BUILD_ROOT" "$GITHUB_WORKSPACE/openwrt"
-        if git -C openwrt fetch --depth 1 origin "$REPO_COMMIT"; then
-          git -C openwrt checkout --detach "$REPO_COMMIT"
-        else
-          echo "WARNING: pinned source commit is not fetchable; using branch HEAD"
-        fi
+        git -C openwrt fetch --depth 1 origin "$REPO_COMMIT" \
+          || { echo "ERROR: pinned source commit $REPO_COMMIT is not fetchable; refusing to build from a moving HEAD"; exit 1; }
+        git -C openwrt checkout --detach "$REPO_COMMIT"
         git -C openwrt log -1 --oneline
         grep -E 'LINUX_VERSION-6.12' openwrt/target/linux/generic/kernel-6.12
 

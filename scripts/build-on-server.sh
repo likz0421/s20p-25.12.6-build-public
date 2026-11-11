@@ -44,11 +44,9 @@ free -h
 if [ ! -d "$OPENWRT_DIR/.git" ]; then
 	echo "==> clone source"
 	git clone --depth 1 -b "$REPO_BRANCH" "$REPO_URL" "$OPENWRT_DIR"
-	if git -C "$OPENWRT_DIR" fetch --depth 1 origin "$REPO_COMMIT"; then
-		git -C "$OPENWRT_DIR" checkout --detach "$REPO_COMMIT"
-	else
-		echo "WARNING: pinned source commit is not fetchable; using branch HEAD"
-	fi
+	git -C "$OPENWRT_DIR" fetch --depth 1 origin "$REPO_COMMIT" \
+		|| { echo "ERROR: pinned source commit $REPO_COMMIT is not fetchable; refusing to build from a moving HEAD"; exit 1; }
+	git -C "$OPENWRT_DIR" checkout --detach "$REPO_COMMIT"
 else
 	echo "==> using existing source: $OPENWRT_DIR"
 	git -C "$OPENWRT_DIR" log -1 --oneline
