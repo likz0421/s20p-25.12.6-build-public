@@ -17,16 +17,10 @@ else
 	echo "WARNING: pinned Lucky commit is not fetchable; using branch HEAD"
 fi
 
-echo "==> Argon v3.1.1 (备用主题)"
+echo "==> Argon v3.1.1 (默认主题)"
 rm -rf package/luci-theme-argon
 git clone --depth 1 --branch v3.1.1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
 grep -q 'PKG_VERSION:=3.1.1' package/luci-theme-argon/Makefile || { echo "ERROR: Argon is not 3.1.1"; exit 1; }
-
-echo "==> Lucent v3.6.1 (默认主题)"
-rm -rf package/luci-theme-lucent
-git clone --depth 1 --branch v3.6.1 https://github.com/likz0421/luci-theme-lucent.git package/luci-theme-lucent
-grep -q '^PKG_VERSION:=3.6.1$' package/luci-theme-lucent/Makefile || { echo "ERROR: Lucent is not 3.6.1"; exit 1; }
-grep -q 'call BuildPackage' package/luci-theme-lucent/Makefile || { echo "ERROR: Lucent Makefile lacks the feed scanner marker"; exit 1; }
 
 echo "==> luci-app-quickfile (same file manager as 24.10)"
 rm -rf package/quickfile
@@ -68,5 +62,4 @@ grep -q 'call BuildPackage' package/luci-app-ethled/Makefile || { echo "ERROR: l
 echo "==> package versions"
 git -C package/lucky rev-parse --short HEAD
 git -C package/luci-theme-argon describe --tags --always
-git -C package/luci-theme-lucent describe --tags --always
 git -C /tmp/daeuniverse describe --tags --always

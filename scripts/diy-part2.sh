@@ -53,7 +53,7 @@ fi
 sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" package/base-files/files/bin/config_generate
 
 echo "==> set default theme and Chinese UI"
-THEME="${DEFAULT_THEME:-lucent}"
+THEME="${DEFAULT_THEME:-argon}"
 LUCI_CFG=feeds/luci/modules/luci-base/root/etc/config/luci
 if [ -f "$LUCI_CFG" ] && grep -q '^[[:space:]]*option mediaurlbase' "$LUCI_CFG"; then
 	sed -i "s#^\(\s*option mediaurlbase\s*\).*#\1/luci-static/$THEME#" "$LUCI_CFG"
@@ -72,7 +72,6 @@ cat > package/base-files/files/etc/uci-defaults/99-set-default-theme <<EOF
 
 THEME="$THEME"
 
-uci set luci.themes.Lucent='/luci-static/lucent'
 uci set luci.themes.Argon='/luci-static/argon'
 
 if [ -d "/www/luci-static/\$THEME" ]; then
@@ -141,7 +140,7 @@ EOF
 chmod 0755 package/base-files/files/etc/uci-defaults/99-add-fantastic-feed
 
 echo "==> ucode crash guards (unregistered functions + POSIX ERE)"
-GUARD_DIRS="feeds/luci package/lucky package/luci-theme-argon package/luci-theme-lucent package/quickfile package/luci-app-honk package/luci-lib-daeuniverse package/luci-app-ethled"
+GUARD_DIRS="feeds/luci package/lucky package/luci-theme-argon package/quickfile package/luci-app-honk package/luci-lib-daeuniverse package/luci-app-ethled"
 python3 "$ROOT/scripts/ucode_guard.py" $GUARD_DIRS
 python3 "$ROOT/scripts/posix_re_check.py" $GUARD_DIRS
 
