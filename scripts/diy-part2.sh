@@ -27,6 +27,22 @@ rm -rf feeds/luci/themes/luci-theme-argon
 rm -rf feeds/luci/themes/luci-theme-fluent
 rm -rf feeds/packages/net/open-app-filter
 
+echo "==> patch rust host toolchain (sync openwrt/packages master)"
+# The rust-lang CI artifact that `download-ci-llvm=true` fetches has been cleaned
+# up, so the host rust build dies with "failed to download llvm from ci" (404).
+# openwrt/packages master fixed this by bumping to 1.96.1, disabling
+# download-ci-llvm and dropping `--ci false`; mirror that here because the
+# immortalwrt openwrt-25.12 branch still carries the broken combination.
+RUST_MK=feeds/packages/lang/rust/Makefile
+[ -f "$RUST_MK" ] || { echo "ERROR: $RUST_MK not found"; exit 1; }
+sed -i -e 's/^PKG_VERSION:=1\.96\.0$/PKG_VERSION:=1.96.1/' \
+	-e 's|^PKG_HASH:=.*|PKG_HASH:=77a6ff3003a4ad0cb00697b043c879e3e1a15d945b1a1f63818903bfc3fa8b98|' \
+	-e 's|--set=llvm.download-ci-llvm=true|--set=llvm.download-ci-llvm=false|' \
+	-e '/^[[:space:]]*--ci false[[:space:]]*\\$/d' "$RUST_MK"
+grep -q 'llvm.download-ci-llvm=false' "$RUST_MK" || { echo "ERROR: failed to disable rust download-ci-llvm"; exit 1; }
+grep -q '^PKG_VERSION:=1.96.1' "$RUST_MK" || { echo "ERROR: failed to bump rust to 1.96.1"; exit 1; }
+grep -q 'download-ci-llvm=true' "$RUST_MK" && { echo "ERROR: download-ci-llvm still enabled"; exit 1; } || true
+
 echo "==> fix nginx config for luci-app-quickfile"
 cat > feeds/packages/net/nginx-util/files/nginx.config <<'EOF'
 
