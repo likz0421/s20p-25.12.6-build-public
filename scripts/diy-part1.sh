@@ -46,6 +46,14 @@ cp "$ROOT/packages/honk/Makefile" package/honk/Makefile
 for f in files/honk.init files/honk.config files/config.dae; do
 	[ -f "package/honk/$f" ] || { echo "ERROR: upstream honk $f is missing"; exit 1; }
 done
+# Force honk disabled out of the box: upstream 3.x dropped `option enabled '0'`
+# from honk.config, but this firmware must ship with the proxy off until the user
+# adds nodes and turns it on in LuCI.
+sed -i "s/^config honk 'config'$/&\n\toption enabled '0'/" package/honk/files/honk.config
+grep -q "option enabled '0'" package/honk/files/honk.config || {
+	echo "ERROR: failed to force honk disabled by default"
+	exit 1
+}
 
 echo "==> luci-app-ethled (S20P 网口指示灯开关)"
 rm -rf package/luci-app-ethled
